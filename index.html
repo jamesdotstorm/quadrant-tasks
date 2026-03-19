@@ -1618,19 +1618,56 @@ function setSyncStatus(msg, color) {
 }
 
 function setupSync() {
-  const current = getSyncToken();
-  const token = prompt('Enter your GitHub Personal Access Token to enable cloud sync.\n\nYour token is stored only in this browser — never in the code.\n\nCurrent: ' + (current ? '✅ configured' : 'not set'), current || '');
-  if (token === null) return;
-  if (!token.trim()) {
-    localStorage.removeItem('sync-token');
-    setSyncStatus('☁️ Sync off', '#9ca3af');
-    _syncEnabled = false;
-    return;
-  }
-  localStorage.setItem('sync-token', token.trim());
-  _syncEnabled = true;
+  // Remove existing modal if any
+  const existing = document.getElementById('sync-modal');
+  if (existing) { existing.remove(); return; }
+
+  const hasToken = !!getSyncToken();
+  const modal = document.createElement('div');
+  modal.id = 'sync-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:28px 32px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <h3 style="font-size:1.1rem;font-weight:700;color:#111827;margin-bottom:8px;">☁️ Cloud Sync</h3>
+      <p style="font-size:.85rem;color:#6b7280;margin-bottom:20px;line-height:1.5;">
+        Sync your tasks across all devices via a private GitHub Gist.<br>
+        Your token is stored <strong>only in this browser</strong> — never in the code.
+      </p>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.78rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;">GitHub Personal Access Token</label>
+        <input id="sync-token-input" type="password" value="${getSyncToken()||''}" placeholder="ghp_xxxxxxxxxxxx"
+          style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:9px 12px;font-size:.85rem;font-family:inherit;outline:none;box-sizing:border-box;" />
+        <p style="font-size:.72rem;color:#9ca3af;margin-top:5px;">
+          Need one? <a href="https://github.com/settings/tokens/new?description=quadrant-tasks&scopes=gist" target="_blank" style="color:#4f46e5;">Create token</a> (only needs <strong>gist</strong> scope)
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="applySyncToken()" style="flex:1;background:#4f46e5;color:white;border:none;border-radius:8px;padding:9px 16px;font-size:.875rem;font-weight:600;cursor:pointer;">
+          ${hasToken ? '🔄 Update & Sync' : '✅ Enable Sync'}
+        </button>
+        ${hasToken ? `<button onclick="pushToGist().then(()=>document.getElementById('sync-modal')?.remove())" style="flex:1;background:#22c55e;color:white;border:none;border-radius:8px;padding:9px 16px;font-size:.875rem;font-weight:600;cursor:pointer;">⬆️ Push to Cloud</button>` : ''}
+        ${hasToken ? `<button onclick="pullFromGist().then(()=>{location.reload()})" style="flex:1;background:#f59e0b;color:white;border:none;border-radius:8px;padding:9px 16px;font-size:.875rem;font-weight:600;cursor:pointer;">⬇️ Pull from Cloud</button>` : ''}
+        ${hasToken ? `<button onclick="disableSync()" style="background:none;border:1px solid #fca5a5;border-radius:8px;padding:9px 14px;font-size:.8rem;color:#dc2626;cursor:pointer;">Disable</button>` : ''}
+        <button onclick="document.getElementById('sync-modal').remove()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:9px 14px;font-size:.8rem;color:#6b7280;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('mousedown', e => { if (e.target === modal) modal.remove(); });
+  setTimeout(() => document.getElementById('sync-token-input')?.focus(), 50);
+}
+function applySyncToken() {
+  const token = document.getElementById('sync-token-input')?.value.trim();
+  if (!token) return;
+  localStorage.setItem('sync-token', token);
+  document.getElementById('sync-modal')?.remove();
   setSyncStatus('☁️ Syncing…', '#6b7280');
   pullFromGist().then(() => pushToGist());
+}
+function disableSync() {
+  if (!confirm('Disable cloud sync? Your local data will not be affected.')) return;
+  localStorage.removeItem('sync-token');
+  setSyncStatus('☁️ Sync off', '#9ca3af');
+  document.getElementById('sync-modal')?.remove();
 }
 
 function getAllData() {
