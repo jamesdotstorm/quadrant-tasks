@@ -834,9 +834,14 @@ function renderInbox() {
       </div>
       <div class="inbox-item-bottom">
         <div class="inbox-move">
-          <select id="qsel-${item.id}"><option value="q1">🔥 Do First</option><option value="q2">📅 Schedule</option><option value="q3">⚡ Delegate</option><option value="q4">🗑 Eliminate</option></select>
+          <select id="qsel-${item.id}" onchange="if(this.value) moveToQuadrant('${item.id}',this.value,document.getElementById('csel-${item.id}').value)">
+            <option value="">— Move to quadrant —</option>
+            <option value="q1">🔥 Do First</option>
+            <option value="q2">📅 Schedule</option>
+            <option value="q3">⚡ Delegate</option>
+            <option value="q4">🗑 Eliminate</option>
+          </select>
           <select id="csel-${item.id}">${catOpts}</select>
-          <button class="inbox-move-btn" onclick="moveToQuadrant('${item.id}',document.getElementById('qsel-${item.id}').value,document.getElementById('csel-${item.id}').value)">Move →</button>
         </div>
         <div class="inbox-review-row">
           <span class="inbox-review-label">Review later:</span>
