@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+    /* NAV */
+    nav { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 24px; display: flex; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .nav-brand { font-weight: 700; font-size: 1rem; color: #111827; padding: 16px 20px 16px 0; margin-right: 8px; border-right: 1px solid #f3f4f6; white-space: nowrap; }
+    .nav-tab { padding: 16px 18px; font-size: 0.875rem; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .nav-tab:hover { color: #111827; }
+    .nav-tab.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+    .nav-badge { background: #ef4444; color: white; border-radius: 20px; font-size: .65rem; font-weight: 700; padding: 1px 6px; min-width: 18px; text-align: center; }
+
+    /* PAGES */
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; }
+
+    /* SHARED WRAP */
+    .page-wrap { max-width: 700px; margin: 0 auto; }
+    .page-header { margin-bottom: 20px; }
+    .page-header h2 { font-size: 1.3rem; font-weight: 700; color: #111827; }
+    .page-header p { color: #6b7280; font-size: .85rem; margin-top: 4px; }
+
+    /* INBOX ADD */
+    .inbox-add { display: flex; gap: 8px; margin-bottom: 20px; }
+    .inbox-add input { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; font-size: .9rem; font-family: inherit; outline: none; transition: border .15s, box-shadow .15s; }
+    .inbox-add input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+    .inbox-add button { background: #4f46e5; color: white; border: none; border-radius: 10px; padding: 10px 18px; font-size: .875rem; font-weight: 600; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+    .inbox-add button:hover { opacity: .88; }
+
+    /* INBOX ITEM */
+    .inbox-item { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; transition: box-shadow .15s; }
+    .inbox-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .inbox-item-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .inbox-item-bottom { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; flex-wrap: wrap; }
+    .inbox-text { flex: 1; font-size: .875rem; color: #374151; outline: none; min-width: 120px; }
+    .inbox-text:focus { background: #f9fafb; border-radius: 4px; padding: 1px 4px; }
+    .inbox-move { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .inbox-move select { border: 1px solid #e5e7eb; border-radius: 7px; padding: 5px 8px; font-size: .775rem; font-family: inherit; color: #374151; background: white; outline: none; cursor: pointer; }
+    .inbox-move-btn { background: #4f46e5; color: white; border: none; border-radius: 7px; padding: 5px 10px; font-size: .775rem; font-weight: 600; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
+    .inbox-move-btn:hover { opacity: .85; }
+    .inbox-rl-btn { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 5px 10px; font-size: .775rem; font-weight: 500; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
+    .inbox-rl-btn:hover { border-color: #a78bfa; color: #7c3aed; }
+    .inbox-item.done-item { opacity: .65; }
+    .inbox-item.done-item .inbox-text { text-decoration: line-through; color: #9ca3af; }
+    /* done page */
+    .done-item-card { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; opacity: .8; }
+    .done-item-body { flex: 1; }
+    .done-item-text { font-size: .875rem; color: #9ca3af; text-decoration: line-through; }
+    .done-item-meta { font-size: .72rem; color: #9ca3af; margin-top: 3px; }
+    .done-restore { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 10px; font-size: .75rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
+    .done-restore:hover { border-color: #4f46e5; color: #4f46e5; }
+    .done-del { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: .9rem; padding: 4px; }
+    .done-del:hover { color: #ef4444; }
+    .done-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 48px 0; }
+    .done-empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .deleted-item-card { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; opacity: .75; }
+    .deleted-item-body { flex: 1; }
+    .deleted-item-text { font-size: .875rem; color: #9ca3af; text-decoration: line-through; }
+    .deleted-item-meta { font-size: .72rem; color: #9ca3af; margin-top: 3px; }
+    .deleted-restore { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 10px; font-size: .75rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
+    .deleted-restore:hover { border-color: #4f46e5; color: #4f46e5; }
+    .deleted-perm { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: .9rem; padding: 4px; }
+    .deleted-perm:hover { color: #ef4444; }
+    .deleted-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 48px 0; }
+    .deleted-empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .clear-all-btn { background: none; border: 1px solid #fca5a5; border-radius: 8px; padding: 6px 14px; font-size: .8rem; color: #dc2626; cursor: pointer; transition: background .15s; margin-bottom: 16px; }
+    .clear-all-btn:hover { background: #fef2f2; }
+    .inbox-delete { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: 1rem; padding: 4px; border-radius: 4px; transition: color .15s; }
+    .inbox-delete:hover { color: #ef4444; }
+    .inbox-review-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .inbox-review-label { font-size: .72rem; color: #9ca3af; }
+    .inbox-review-input { border: 1px solid #e5e7eb; border-radius: 6px; padding: 3px 7px; font-size: .72rem; font-family: inherit; outline: none; color: #374151; cursor: pointer; }
+    .inbox-review-input:focus { border-color: #a78bfa; }
+    .inbox-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 48px 0; }
+    .inbox-empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+    /* REVIEW LATER PAGE */
+    .rl-item { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; }
+    .rl-item-body { flex: 1; }
+    .rl-item-text { font-size: .875rem; color: #374151; }
+    .rl-item-meta { font-size: .72rem; color: #9ca3af; margin-top: 3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rl-date-badge { font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #f3e8ff; color: #7c3aed; white-space: nowrap; }
+    .rl-overdue-badge { background: #fef3c7; color: #d97706; }
+    .rl-restore { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 10px; font-size: .75rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
+    .rl-restore:hover { border-color: #4f46e5; color: #4f46e5; }
+    .rl-restore-inbox { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 10px; font-size: .75rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
+    .rl-restore-inbox:hover { border-color: #a78bfa; color: #7c3aed; }
+    .rl-del { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: .9rem; padding: 4px; }
+    .rl-del:hover { color: #ef4444; }
+    .rl-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 48px 0; }
+    .rl-empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+    /* QUADRANTS */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1200px; margin: 0 auto; min-height: calc(100vh - 120px); }
+    .quadrant { background: #fff; border-radius: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); display: flex; flex-direction: column; overflow: hidden; transition: box-shadow .2s; min-height: 300px; }
+    .quadrant.drag-over { box-shadow: 0 0 0 2px var(--accent), 0 4px 24px rgba(0,0,0,.1); }
+    .quadrant-header { padding: 16px 16px 12px; border-bottom: 1px solid #f3f4f6; background: linear-gradient(135deg, var(--accent-light), #fff 60%); }
+    .quadrant-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .quadrant-title { display: flex; align-items: center; gap: 8px; }
+    .quadrant-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .quadrant h2 { font-size: .95rem; font-weight: 700; color: #111827; }
+    .quadrant-sub { font-size: .75rem; color: #9ca3af; font-weight: 500; }
+    .q-badge { background: var(--accent); color: white; border-radius: 20px; font-size: .7rem; font-weight: 700; padding: 2px 8px; min-width: 22px; text-align: center; }
+    .clear-btn { font-size: .7rem; color: #9ca3af; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color .15s, background .15s; }
+    .clear-btn:hover { color: #ef4444; background: #fef2f2; }
+    .add-task-row { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid #f3f4f6; background: #fafafa; }
+    .add-task-row input[type="text"] { flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px; font-size: .825rem; font-family: inherit; outline: none; transition: border .15s; background: white; }
+    .add-task-row input[type="text"]:focus { border-color: var(--accent); }
+    .add-task-row select { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 6px; font-size: .775rem; font-family: inherit; outline: none; background: white; color: #374151; cursor: pointer; }
+    .add-btn { background: var(--accent); color: white; border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity .15s, transform .1s; flex-shrink: 0; }
+    .add-btn:hover { opacity: .85; transform: scale(1.05); }
+    .tasks { flex: 1; overflow-y: auto; padding: 8px; }
+
+    /* TASK CARD */
+    .task { display: flex; flex-direction: column; padding: 9px 10px; border-radius: 10px; margin-bottom: 4px; background: #fff; border: 1px solid #f3f4f6; cursor: grab; transition: box-shadow .15s, border-color .15s, opacity .2s; user-select: none; }
+    .task:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); border-color: #e5e7eb; }
+    .task.dragging { opacity: .4; cursor: grabbing; }
+    .task.done .task-text { text-decoration: line-through; color: #9ca3af; }
+    .task.done { opacity: .7; }
+    .task.review-due { border-left: 3px solid #f59e0b; }
+    .task-row { display: flex; align-items: center; gap: 8px; }
+    .task input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+    .task-text { flex: 1; font-size: .85rem; color: #374151; line-height: 1.4; word-break: break-word; outline: none; }
+    .task-text:focus { background: #f9fafb; border-radius: 4px; padding: 1px 4px; }
+    .task-cat { font-size: .65rem; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+    .task-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .task-btn { background: none; border: 1px solid #e5e7eb; border-radius: 6px; padding: 2px 7px; font-size: .7rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s, background .15s; white-space: nowrap; }
+    .task-btn.rl-btn:hover { border-color: #c4b5fd; color: #7c3aed; background: #f3e8ff; }
+    .task-btn.delete-btn:hover { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+    .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #f9fafb; flex-wrap: wrap; }
+    .task-review-label { font-size: .7rem; color: #9ca3af; }
+    .task-review-input { border: 1px solid #e5e7eb; border-radius: 6px; padding: 2px 6px; font-size: .7rem; font-family: inherit; outline: none; color: #374151; cursor: pointer; }
+    .task-review-input:focus { border-color: #f59e0b; }
+    .task-clear-review { background: none; border: none; color: #d1d5db; font-size: .75rem; cursor: pointer; padding: 1px 4px; }
+    .task-clear-review:hover { color: #ef4444; }
+    .review-badge { font-size: .65rem; font-weight: 700; padding: 1px 6px; border-radius: 20px; background: #fef3c7; color: #d97706; white-space: nowrap; }
+
+    /* quadrant themes */
+    .q1 { --accent: #ef4444; --accent-light: #fef2f2; }
+    .q2 { --accent: #22c55e; --accent-light: #f0fdf4; }
+    .q3 { --accent: #f59e0b; --accent-light: #fffbeb; }
+    .q4 { --accent: #6b7280; --accent-light: #f9fafb; }
+
+    /* category colours */
+    .cat-work       { background: #eff6ff; color: #3b82f6; }
+    .cat-personal   { background: #f5f3ff; color: #8b5cf6; }
+    .cat-turnstay   { background: #fff7ed; color: #f97316; }
+    .cat-health     { background: #f0fdf4; color: #22c55e; }
+    .cat-family     { background: #fdf4ff; color: #d946ef; }
+    .cat-finance    { background: #fffbeb; color: #f59e0b; }
+    .cat-other      { background: #f3f4f6; color: #6b7280; }
+    .cat-accounting { background: #fdf2f8; color: #9333ea; }
+    .cat-bunker     { background: #f0f9ff; color: #0284c7; }
+    .cat-wealth     { background: #fdf6ec; color: #b45309; }
+
+    .empty-state { text-align: center; color: #d1d5db; font-size: .8rem; padding: 24px 12px; }
+
+    /* ASSIGNEE */
+    .task-assignee-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #f9fafb; flex-wrap: wrap; }
+    .task-assignee-label { font-size: .7rem; color: #9ca3af; white-space: nowrap; }
+    .task-assignee-select { border: 1px solid #f59e0b; border-radius: 7px; padding: 3px 7px; font-size: .75rem; font-family: inherit; color: #374151; background: #fffbeb; outline: none; cursor: pointer; }
+    .task-assignee-select:focus { border-color: #d97706; }
+    .assignee-badge { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #fef3c7; color: #b45309; white-space: nowrap; }
+    .inbox-assignee-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .team-btn { font-size: .7rem; color: #9ca3af; background: none; border: 1px solid #e5e7eb; cursor: pointer; padding: 2px 8px; border-radius: 5px; transition: color .15s, border-color .15s; margin-left: 6px; }
+    .team-btn:hover { color: #f59e0b; border-color: #f59e0b; }
+
+    @media (max-width: 700px) {
+      .page { padding: 12px; }
+      .grid { grid-template-columns: 1fr; min-height: auto; }
+      .quadrant { min-height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">⚡ Tasks</div>
+  <div class="nav-tab active" onclick="showPage('inbox')" id="tab-inbox">
+    📥 Inbox <span class="nav-badge" id="inbox-count" style="display:none">0</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('quadrants')" id="tab-quadrants">⊞ Quadrants</div>
+  <div class="nav-tab" onclick="showPage('reviewlater')" id="tab-reviewlater">
+    🕐 Review Later <span class="nav-badge" id="rl-count" style="display:none;background:#7c3aed">0</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('donetasks')" id="tab-donetasks">
+    ✅ Done <span class="nav-badge" id="done-count" style="display:none;background:#22c55e">0</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('deleted')" id="tab-deleted">
+    🗑 Deleted <span class="nav-badge" id="deleted-count" style="display:none;background:#6b7280">0</span>
+  </div>
+</nav>
+
+<!-- INBOX -->
+<div class="page active" id="page-inbox">
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2>📥 Inbox</h2>
+      <p>Capture anything quickly. Sort into quadrants when you're at your desk.</p>
+    </div>
+    <div class="inbox-add">
+      <input type="text" id="inbox-input" placeholder="Brain dump — what's on your mind?" onkeydown="handleInboxKey(event)" />
+      <button onclick="addInboxItem()">+ Add</button>
+    </div>
+    <div id="inbox-list"></div>
+  </div>
+</div>
+
+<!-- QUADRANTS -->
+<div class="page" id="page-quadrants">
+  <div class="grid">
+    <div class="quadrant q1" id="q1" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'q1')">
+      <div class="quadrant-header">
+        <div class="quadrant-title-row">
+          <div class="quadrant-title"><div class="quadrant-dot"></div><h2>Do First</h2><span class="q-badge" id="badge-q1">0</span></div>
+          <button class="clear-btn" onclick="clearDone('q1')">Clear done</button>
+        </div>
+        <div class="quadrant-sub">🔥 Urgent &amp; Important</div>
+      </div>
+      <div class="add-task-row">
+        <input type="text" placeholder="Add task…" onkeydown="handleKey(event,'q1')" id="input-q1" />
+        <select id="cat-q1"><option value="work">Work</option><option value="personal">Personal</option><option value="turnstay">TurnStay</option><option value="health">Health</option><option value="family">Family</option><option value="finance">Finance</option><option value="accounting">Accounting</option><option value="bunker">Bunker</option><option value="other">Other</option><option value="wealth">Wealth</option></select>
+        <button class="add-btn" onclick="addTask('q1')">+</button>
+      </div>
+      <div class="tasks" id="tasks-q1"></div>
+    </div>
+    <div class="quadrant q2" id="q2" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'q2')">
+      <div class="quadrant-header">
+        <div class="quadrant-title-row">
+          <div class="quadrant-title"><div class="quadrant-dot"></div><h2>Schedule</h2><span class="q-badge" id="badge-q2">0</span></div>
+          <button class="clear-btn" onclick="clearDone('q2')">Clear done</button>
+        </div>
+        <div class="quadrant-sub">📅 Not Urgent &amp; Important</div>
+      </div>
+      <div class="add-task-row">
+        <input type="text" placeholder="Add task…" onkeydown="handleKey(event,'q2')" id="input-q2" />
+        <select id="cat-q2"><option value="work">Work</option><option value="personal">Personal</option><option value="turnstay">TurnStay</option><option value="health">Health</option><option value="family">Family</option><option value="finance">Finance</option><option value="accounting">Accounting</option><option value="bunker">Bunker</option><option value="other">Other</option><option value="wealth">Wealth</option></select>
+        <button class="add-btn" onclick="addTask('q2')">+</button>
+      </div>
+      <div class="tasks" id="tasks-q2"></div>
+    </div>
+    <div class="quadrant q3" id="q3" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'q3')">
+      <div class="quadrant-header">
+        <div class="quadrant-title-row">
+          <div class="quadrant-title"><div class="quadrant-dot"></div><h2>Delegate</h2><span class="q-badge" id="badge-q3">0</span></div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="team-btn" onclick="editTeam()" title="Manage team members">👥 Team</button>
+            <button class="clear-btn" onclick="clearDone('q3')">Clear done</button>
+          </div>
+        </div>
+        <div class="quadrant-sub">⚡ Urgent &amp; Not Important</div>
+      </div>
+      <div class="add-task-row">
+        <input type="text" placeholder="Add task…" onkeydown="handleKey(event,'q3')" id="input-q3" />
+        <select id="cat-q3"><option value="work">Work</option><option value="personal">Personal</option><option value="turnstay">TurnStay</option><option value="health">Health</option><option value="family">Family</option><option value="finance">Finance</option><option value="accounting">Accounting</option><option value="bunker">Bunker</option><option value="other">Other</option><option value="wealth">Wealth</option></select>
+        <button class="add-btn" onclick="addTask('q3')">+</button>
+      </div>
+      <div class="tasks" id="tasks-q3"></div>
+    </div>
+    <div class="quadrant q4" id="q4" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'q4')">
+      <div class="quadrant-header">
+        <div class="quadrant-title-row">
+          <div class="quadrant-title"><div class="quadrant-dot"></div><h2>Eliminate</h2><span class="q-badge" id="badge-q4">0</span></div>
+          <button class="clear-btn" onclick="clearDone('q4')">Clear done</button>
+        </div>
+        <div class="quadrant-sub">🗑 Not Urgent &amp; Not Important</div>
+      </div>
+      <div class="add-task-row">
+        <input type="text" placeholder="Add task…" onkeydown="handleKey(event,'q4')" id="input-q4" />
+        <select id="cat-q4"><option value="work">Work</option><option value="personal">Personal</option><option value="turnstay">TurnStay</option><option value="health">Health</option><option value="family">Family</option><option value="finance">Finance</option><option value="accounting">Accounting</option><option value="bunker">Bunker</option><option value="other">Other</option><option value="wealth">Wealth</option></select>
+        <button class="add-btn" onclick="addTask('q4')">+</button>
+      </div>
+      <div class="tasks" id="tasks-q4"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DONE TASKS -->
+<div class="page" id="page-donetasks">
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2>✅ Done Tasks</h2>
+      <p>All completed tasks from Inbox and Quadrants live here.</p>
+    </div>
+    <button class="clear-all-btn" onclick="clearAllDone()">🗑 Clear all done tasks</button>
+    <div id="done-list"></div>
+  </div>
+</div>
+
+<!-- DELETED ARCHIVE -->
+<div class="page" id="page-deleted">
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2>🗑 Deleted Tasks</h2>
+      <p>Deleted tasks are kept here. Restore or permanently remove them.</p>
+    </div>
+    <button class="clear-all-btn" onclick="clearAllDeleted()">🗑 Permanently delete all</button>
+    <div id="deleted-list"></div>
+  </div>
+</div>
+
+<!-- REVIEW LATER -->
+<div class="page" id="page-reviewlater">
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2>🕐 Review Later</h2>
+      <p>Tasks parked here. Set a date and they'll automatically return to your Inbox when it's time.</p>
+    </div>
+    <div id="rl-list"></div>
+  </div>
+</div>
+
+<script>
+const QUADRANTS = ['q1','q2','q3','q4'];
+const CAT_LABEL = { work:'Work', personal:'Personal', turnstay:'TurnStay', health:'Health', family:'Family', finance:'Finance', other:'Other', accounting:'Accounting', bunker:'Bunker', wealth:'Wealth' };
+const Q_LABEL = { q1:'🔥 Do First', q2:'📅 Schedule', q3:'⚡ Delegate', q4:'🗑 Eliminate' };
+
+// ── TEAM ──
+let team = [];
+function loadTeam() {
+  const s = localStorage.getItem('task-team-v1');
+  team = s ? JSON.parse(s) : ['Alon','Tarn'];
+  saveTeam();
+}
+function saveTeam() { localStorage.setItem('task-team-v1', JSON.stringify(team)); }
+function editTeam() {
+  const current = team.join(', ');
+  const input = prompt('Edit team members (comma-separated):', current);
+  if (input === null) return;
+  team = input.split(',').map(n => n.trim()).filter(Boolean);
+  saveTeam();
+  QUADRANTS.forEach(q => renderQ(q));
+  renderInbox();
+}
+function teamOpts(selected) {
+  const opts = ['<option value="">— Unassigned —</option>'];
+  team.forEach(name => opts.push(`<option value="${escHtml(name)}"${name===selected?' selected':''}>${escHtml(name)}</option>`));
+  return opts.join('');
+}
+function setAssignee(q, id, name) {
+  const t = tasks[q] && tasks[q].find(t => t.id === id);
+  if (t) { t.assignee = name || null; saveTasks(); renderQ(q); }
+}
+function setInboxAssignee(id, name) {
+  const item = inbox.find(i => i.id === id);
+  if (item) { item.assignee = name || null; saveInbox(); }
+}
+
+let tasks = {}, inbox = [], reviewLater = [], doneTasks = [], deletedTasks = [];
+let dragTaskId = null, dragFromQ = null;
+
+const SEED = {
+  q1:[
+    {id:'urgent001',text:'Give Morag access to Nedbank',cat:'finance',done:false},
+    {id:'seed001',text:'Set up Torti with Attio',cat:'work',done:false},
+    {id:'seed002',text:'Create OpenClaw control dashboard',cat:'work',done:false},
+    {id:'seed003',text:'New payment gateway',cat:'turnstay',done:false},
+    {id:'seed004',text:'Play with Victory API',cat:'work',done:false},
+    {id:'seed005',text:'Capital bank guarantee',cat:'finance',done:false}
+  ],
+  q2:[], q3:[], q4:[]
+};
+
+const INBOX_SEED = [
+  {id:'acc001',text:'Introduction (James Hedley/Lauri Kurs)',cat:'accounting'},
+  {id:'acc002',text:'Draft AFS and Information request: Turn Travels Namibia',cat:'accounting'},
+  {id:'acc003',text:'Share certificate endorsed',cat:'accounting'},
+  {id:'acc004',text:'Quicket invoice',cat:'accounting'},
+  {id:'acc005',text:'Independent Review: Ternstay (Pty) Ltd',cat:'accounting'},
+  {id:'acc006',text:'RE: Turn Travels Tax Update',cat:'accounting'},
+  {id:'acc007',text:'Revenue recognition',cat:'accounting'},
+  {id:'acc008',text:'Automated Reminder - The Accountancy Partnership (Ref: TAP31150) TAP:0017237',cat:'accounting'},
+  {id:'acc009',text:'SA shares endorsed non-res',cat:'accounting'},
+  {id:'acc010',text:'Stripe Quicket Lead access',cat:'accounting'},
+  {id:'bh001',text:'HUB23037_SOLY SA House 6 - James Hedley (Bunker Hills Investments 313)',cat:'bunker'},
+  {id:'bh002',text:'Fwd: Municipal Invoice - Acc# 142792803 ref# 500017745281',cat:'bunker'},
+  {id:'bh003',text:'Quotes and invoices General customers.xls',cat:'bunker'},
+  {id:'bh004',text:'Sort gas Ibis House',cat:'bunker'},
+  {id:'bh005',text:'Gas quote Ibis House',cat:'bunker'},
+  {id:'bh006',text:'Sort insurance Ibis',cat:'bunker'},
+  {id:'hlth001',text:'Order protein powder',cat:'health'}
+];
+
+// ── NAV ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'reviewlater') renderRL();
+  if (name === 'donetasks') renderDone();
+  if (name === 'deleted') renderDeleted();
+}
+
+// ── UTILS ──
+function uid() { return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtDate(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
+
+// ── CHECK REVIEW DATES (auto-return to inbox) ──
+function checkReviewDates() {
+  const todayStr = today();
+  let changed = false;
+  reviewLater = reviewLater.filter(item => {
+    if (item.reviewDate && item.reviewDate <= todayStr) {
+      // Return to inbox
+      const {reviewDate, storedFrom, storedAt, ...base} = item;
+      inbox.unshift({...base, returnedFrom:'reviewlater', returnDate: reviewDate});
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+  if (changed) { saveRL(); saveInbox(); renderInbox(); }
+}
+
+// ── INBOX ──
+function loadInbox() {
+  const saved = localStorage.getItem('task-inbox-v1');
+  inbox = saved ? JSON.parse(saved) : [];
+  // Only seed once — check flag
+  if (!localStorage.getItem('inbox-seeded-v1')) {
+    INBOX_SEED.forEach(s => { if (!inbox.find(i => i.id === s.id)) inbox.push(s); });
+    localStorage.setItem('inbox-seeded-v1', '1');
+  }
+  saveInbox(); renderInbox();
+}
+function saveInbox() { localStorage.setItem('task-inbox-v1',JSON.stringify(inbox)); updateInboxBadge(); }
+function updateInboxBadge() {
+  const b = document.getElementById('inbox-count');
+  b.textContent = inbox.length; b.style.display = inbox.length ? 'inline-block' : 'none';
+}
+function addInboxItem() {
+  const input = document.getElementById('inbox-input');
+  const text = input.value.trim(); if (!text) return;
+  inbox.unshift({id:uid(),text,cat:'other'});
+  input.value=''; saveInbox(); renderInbox();
+}
+function handleInboxKey(e) { if (e.key==='Enter') addInboxItem(); }
+function deleteInboxItem(id) {
+  const item=inbox.find(i=>i.id===id); if(!item) return;
+  inbox=inbox.filter(i=>i.id!==id);
+  if(item.reviewDate) {
+    reviewLater.unshift({...item, storedFrom:'inbox', storedAt:today()});
+    saveRL();
+  } else {
+    deletedTasks.unshift({...item, deletedAt:today(), source:'inbox'});
+    saveDeleted();
+  }
+  saveInbox(); renderInbox();
+}
+function doneInboxItem(id) {
+  const item = inbox.find(i=>i.id===id); if(!item) return;
+  inbox = inbox.filter(i=>i.id!==id);
+  doneTasks.unshift({...item, doneAt:today(), source:'inbox'});
+  saveInbox(); saveDone(); renderInbox();
+}
+function moveToQuadrant(id, q, cat) {
+  const item = inbox.find(i=>i.id===id); if (!item) return;
+  inbox = inbox.filter(i=>i.id!==id);
+  tasks[q].unshift({id:uid(),text:item.text,cat:cat||'other',done:false});
+  saveInbox(); saveTasks(); renderInbox(); renderQ(q);
+}
+function moveInboxToRL(id, date) {
+  const item = inbox.find(i=>i.id===id); if (!item) return;
+  inbox = inbox.filter(i=>i.id!==id);
+  reviewLater.unshift({...item, storedFrom:'inbox', storedAt:today(), reviewDate:date||null});
+  saveInbox(); saveRL(); renderInbox();
+}
+function renderInbox() {
+  const c = document.getElementById('inbox-list'); updateInboxBadge();
+  if (!inbox.length) { c.innerHTML='<div class="inbox-empty"><span>🎉</span>Inbox zero — you\'re all clear!</div>'; return; }
+  c.innerHTML='';
+  inbox.forEach(item => {
+    const div = document.createElement('div'); div.className='inbox-item';
+    const defCat = item.cat || 'other';
+    const catOpts = Object.entries(CAT_LABEL).map(([v,l])=>`<option value="${v}"${v===defCat?' selected':''}>${l}</option>`).join('');
+    const returnedNote = item.returnedFrom ? `<span style="font-size:.7rem;color:#7c3aed;background:#f3e8ff;padding:1px 7px;border-radius:20px;font-weight:600;">↩ Returned ${fmtDate(item.returnDate)}</span>` : '';
+    div.innerHTML=`
+      <div class="inbox-item-top">
+        <span class="inbox-text" contenteditable="true" onblur="editInbox('${item.id}',this)">${escHtml(item.text)}</span>
+        ${returnedNote}
+        <input type="checkbox" style="width:16px;height:16px;cursor:pointer;accent-color:#22c55e;flex-shrink:0;" onchange="doneInboxItem('${item.id}')" title="Mark done" />
+        <button class="inbox-delete" onclick="deleteInboxItem('${item.id}')">×</button>
+      </div>
+      <div class="inbox-item-bottom">
+        <div class="inbox-move">
+          <select id="qsel-${item.id}"><option value="q1">🔥 Do First</option><option value="q2">📅 Schedule</option><option value="q3">⚡ Delegate</option><option value="q4">🗑 Eliminate</option></select>
+          <select id="csel-${item.id}">${catOpts}</select>
+          <button class="inbox-move-btn" onclick="moveToQuadrant('${item.id}',document.getElementById('qsel-${item.id}').value,document.getElementById('csel-${item.id}').value)">Move →</button>
+        </div>
+        <div class="inbox-review-row">
+          <span class="inbox-review-label">Review later:</span>
+          <input type="date" class="inbox-review-input" id="rldate-${item.id}" placeholder="optional date" onchange="if(this.value) moveInboxToRL('${item.id}',this.value)" />
+          <button class="inbox-rl-btn" onclick="moveInboxToRL('${item.id}',document.getElementById('rldate-${item.id}').value||null)">🕐 Park it (no date)</button>
+        </div>
+        <div class="inbox-assignee-row">
+          <span class="inbox-review-label">Assign to:</span>
+          <select class="task-assignee-select" onchange="setInboxAssignee('${item.id}',this.value)">
+            ${teamOpts(item.assignee||'')}
+          </select>
+          ${item.assignee ? `<span class="assignee-badge">👤 ${escHtml(item.assignee)}</span>` : ''}
+        </div>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+function editInbox(id,el) { const i=inbox.find(i=>i.id===id); if(i){i.text=el.innerText.trim();saveInbox();} }
+
+// ── REVIEW LATER ──
+function loadRL() { const s=localStorage.getItem('task-rl-v1'); reviewLater=s?JSON.parse(s):[]; updateRLBadge(); }
+function saveRL() { localStorage.setItem('task-rl-v1',JSON.stringify(reviewLater)); updateRLBadge(); }
+function updateRLBadge() {
+  const b=document.getElementById('rl-count');
+  b.textContent=reviewLater.length; b.style.display=reviewLater.length?'inline-block':'none';
+}
+function moveTaskToRL(q, id, date) {
+  const t=tasks[q].find(t=>t.id===id); if(!t) return;
+  tasks[q]=tasks[q].filter(t=>t.id!==id);
+  reviewLater.unshift({...t, storedFrom:q, storedAt:today(), reviewDate:date||null});
+  saveTasks(); saveRL(); renderQ(q);
+}
+function restoreRLToQuadrant(id, q) {
+  const item=reviewLater.find(a=>a.id===id); if(!item) return;
+  reviewLater=reviewLater.filter(a=>a.id!==id);
+  const {storedFrom,storedAt,reviewDate,...task}=item;
+  const targetQ = q || storedFrom || 'q1';
+  if(QUADRANTS.includes(targetQ)) {
+    tasks[targetQ].unshift({...task,done:false});
+    saveTasks(); renderQ(targetQ);
+  } else {
+    inbox.unshift({...task});
+    saveInbox(); renderInbox();
+  }
+  saveRL(); renderRL();
+}
+function deleteFromRL(id) { reviewLater=reviewLater.filter(a=>a.id!==id); saveRL(); renderRL(); }
+function renderRL() {
+  const c=document.getElementById('rl-list'); updateRLBadge();
+  if(!reviewLater.length){c.innerHTML='<div class="rl-empty"><span>🕐</span>Nothing parked for later.</div>';return;}
+  c.innerHTML='';
+  const todayStr=today();
+  reviewLater.forEach(item=>{
+    const isOverdue = item.reviewDate && item.reviewDate <= todayStr;
+    const div=document.createElement('div'); div.className='rl-item';
+    const origin = QUADRANTS.includes(item.storedFrom) ? Q_LABEL[item.storedFrom] : '📥 Inbox';
+    const qOpts = [
+      ...Object.entries(Q_LABEL).map(([v,l])=>`<option value="${v}"${v===item.storedFrom?' selected':''}>${l}</option>`),
+      `<option value="inbox">📥 Inbox</option>`
+    ].join('');
+    let dateBadge = '';
+    if(item.reviewDate) dateBadge = `<span class="rl-date-badge${isOverdue?' rl-overdue-badge':''}">${isOverdue?'⚠️ Due ':'📅 '}${fmtDate(item.reviewDate)}</span>`;
+    div.innerHTML=`
+      <div class="rl-item-body">
+        <div class="rl-item-text">${escHtml(item.text)}</div>
+        <div class="rl-item-meta">
+          From ${origin} · Parked ${fmtDate(item.storedAt)}
+          <span class="task-cat cat-${item.cat}" style="display:inline;font-size:.65rem;padding:1px 6px;border-radius:20px;">${CAT_LABEL[item.cat]||item.cat}</span>
+          ${dateBadge}
+        </div>
+      </div>
+      <select id="rsel-${item.id}" style="border:1px solid #e5e7eb;border-radius:7px;padding:4px 6px;font-size:.75rem;font-family:inherit;color:#374151;background:white;outline:none;cursor:pointer;">${qOpts}</select>
+      <button class="rl-restore" onclick="restoreRLToQuadrant('${item.id}',document.getElementById('rsel-${item.id}').value)">Restore →</button>
+      <button class="rl-del" onclick="deleteFromRL('${item.id}')">×</button>`;
+    c.appendChild(div);
+  });
+}
+
+// ── QUADRANTS ──
+function loadTasks() {
+  const saved=localStorage.getItem('quadrant-tasks-v2');
+  if(saved){ tasks=JSON.parse(saved); }
+  else { tasks=JSON.parse(JSON.stringify(SEED)); }
+  saveTasks(); QUADRANTS.forEach(q=>renderQ(q));
+}
+function saveTasks() { localStorage.setItem('quadrant-tasks-v2',JSON.stringify(tasks)); }
+function addTask(q) {
+  const input=document.getElementById('input-'+q), cat=document.getElementById('cat-'+q).value, text=input.value.trim();
+  if(!text) return;
+  tasks[q].unshift({id:uid(),text,cat,done:false}); input.value=''; saveTasks(); renderQ(q);
+}
+function handleKey(e,q) { if(e.key==='Enter') addTask(q); }
+function toggleDone(q,id) {
+  const t=tasks[q].find(t=>t.id===id); if(!t) return;
+  tasks[q] = tasks[q].filter(x=>x.id!==id);
+  doneTasks.unshift(Object.assign({}, t, {done:true, doneAt:today(), source:q}));
+  saveTasks(); saveDone(); renderQ(q);
+}
+function deleteTask(q,id) {
+  const t=tasks[q].find(t=>t.id===id); if(!t) return;
+  tasks[q]=tasks[q].filter(t=>t.id!==id);
+  if(t.reviewDate) {
+    reviewLater.unshift({...t, storedFrom:q, storedAt:today()});
+    saveRL();
+  } else {
+    deletedTasks.unshift({...t, deletedAt:today(), source:q});
+    saveDeleted();
+  }
+  saveTasks(); renderQ(q);
+}
+function clearDone(q) { tasks[q]=tasks[q].filter(t=>!t.done); saveTasks(); renderQ(q); }
+function setReview(q,id,date) {
+  const t=tasks[q].find(t=>t.id===id); if(!t) return;
+  if(date) {
+    // Immediately move to Review Later
+    tasks[q]=tasks[q].filter(t=>t.id!==id);
+    reviewLater.unshift({...t, reviewDate:date, storedFrom:q, storedAt:today()});
+    saveTasks(); saveRL(); renderQ(q);
+  } else {
+    t.reviewDate=null; saveTasks(); renderQ(q);
+  }
+}
+function editTask(q,id,el) { const t=tasks[q].find(t=>t.id===id); if(t){t.text=el.innerText.trim();if(!t.text){deleteTask(q,id);return;}saveTasks();} }
+
+function renderQ(q) {
+  const c=document.getElementById('tasks-'+q), badge=document.getElementById('badge-'+q), list=tasks[q]||[];
+  badge.textContent=list.filter(t=>!t.done).length;
+  if(!list.length){c.innerHTML='<div class="empty-state">No tasks yet</div>';return;}
+  c.innerHTML='';
+  const todayStr=today();
+  list.forEach(t=>{
+    const isOverdue = t.reviewDate && t.reviewDate <= todayStr;
+    const div=document.createElement('div');
+    div.className='task'+(t.done?' done':'')+(isOverdue?' review-due':'');
+    div.draggable=true; div.dataset.id=t.id; div.dataset.q=q;
+    const assigneeBadge = t.assignee ? `<span class="assignee-badge">👤 ${escHtml(t.assignee)}</span>` : '';
+    const assigneeRow = (q === 'q3' || t.assignee) ? `
+      <div class="task-assignee-row">
+        <span class="task-assignee-label">Assign to:</span>
+        <select class="task-assignee-select" onchange="setAssignee('${q}','${t.id}',this.value)">
+          ${teamOpts(t.assignee||'')}
+        </select>
+        ${assigneeBadge}
+      </div>` : '';
+    div.innerHTML=`
+      <div class="task-row">
+        <input type="checkbox" onchange="toggleDone('${q}','${t.id}')" />
+        <span class="task-text" contenteditable="true" onblur="editTask('${q}','${t.id}',this)">${escHtml(t.text)}</span>
+        <span class="task-cat cat-${t.cat}">${CAT_LABEL[t.cat]||t.cat}</span>
+        <div class="task-actions">
+          <button class="task-btn rl-btn" onclick="showRLModal('${q}','${t.id}')" title="Review Later">🕐</button>
+          <button class="task-btn delete-btn" onclick="deleteTask('${q}','${t.id}')" title="Delete">×</button>
+        </div>
+      </div>
+      <div class="task-meta">
+        <span class="task-review-label">Review in:</span>
+        <input type="date" class="task-review-input" value="${t.reviewDate||''}" onchange="setReview('${q}','${t.id}',this.value)" title="Set review date" />
+        ${t.reviewDate?`<span class="review-badge">📅 ${fmtDate(t.reviewDate)}</span><button class="task-clear-review" onclick="setReview('${q}','${t.id}',null)">✕</button>`:''}
+      </div>
+      ${assigneeRow}`;
+    div.addEventListener('dragstart',e=>{dragTaskId=t.id;dragFromQ=q;setTimeout(()=>div.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+    div.addEventListener('dragend',()=>{div.classList.remove('dragging');dragTaskId=null;dragFromQ=null;});
+    c.appendChild(div);
+  });
+}
+
+// ── RL MODAL (quick park from quadrant) ──
+function showRLModal(q, id) {
+  const t = tasks[q].find(t=>t.id===id); if(!t) return;
+  const date = prompt(`Park "${t.text}" in Review Later.\n\nEnter a return date (YYYY-MM-DD) or leave blank to park without a date:`);
+  if (date === null) return; // cancelled
+  moveTaskToRL(q, id, date.trim() || null);
+}
+
+function onDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function onDrop(e,toQ){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  if(!dragTaskId||dragFromQ===toQ) return;
+  const task=tasks[dragFromQ].find(t=>t.id===dragTaskId); if(!task) return;
+  tasks[dragFromQ]=tasks[dragFromQ].filter(t=>t.id!==dragTaskId);
+  tasks[toQ].unshift(task);
+  saveTasks();renderQ(dragFromQ);renderQ(toQ);
+}
+
+// ── DONE TASKS ──
+function loadDone() { const s=localStorage.getItem('task-done-v1'); doneTasks=s?JSON.parse(s):[]; updateDoneBadge(); }
+function saveDone() { localStorage.setItem('task-done-v1',JSON.stringify(doneTasks)); updateDoneBadge(); }
+function updateDoneBadge() {
+  const b=document.getElementById('done-count');
+  b.textContent=doneTasks.length; b.style.display=doneTasks.length?'inline-block':'none';
+}
+function clearAllDone() {
+  if(!confirm('Clear all done tasks permanently?')) return;
+  doneTasks=[]; saveDone(); renderDone();
+}
+function restoreFromDone(id) {
+  const item=doneTasks.find(d=>d.id===id); if(!item) return;
+  doneTasks=doneTasks.filter(d=>d.id!==id);
+  const {doneAt,source,...task}=item;
+  if(QUADRANTS.includes(source)) {
+    tasks[source].unshift({...task,done:false}); saveTasks(); renderQ(source);
+  } else {
+    inbox.unshift({...task}); saveInbox(); renderInbox();
+  }
+  saveDone(); renderDone();
+}
+function deleteFromDone(id) { doneTasks=doneTasks.filter(d=>d.id!==id); saveDone(); renderDone(); }
+function renderDone() {
+  const c=document.getElementById('done-list'); updateDoneBadge();
+  if(!doneTasks.length){c.innerHTML='<div class="done-empty"><span>🎉</span>No completed tasks yet.</div>';return;}
+  c.innerHTML='';
+  doneTasks.forEach(item=>{
+    const div=document.createElement('div'); div.className='done-item-card';
+    const srcLabel = QUADRANTS.includes(item.source) ? Q_LABEL[item.source] : '📥 Inbox';
+    div.innerHTML=`
+      <div class="done-item-body">
+        <div class="done-item-text">${escHtml(item.text)}</div>
+        <div class="done-item-meta">
+          From ${srcLabel} · Done ${fmtDate(item.doneAt)}
+          <span class="task-cat cat-${item.cat}" style="display:inline;font-size:.65rem;padding:1px 6px;border-radius:20px;">${CAT_LABEL[item.cat]||item.cat}</span>
+        </div>
+      </div>
+      <button class="done-restore" onclick="restoreFromDone('${item.id}')">↩ Restore</button>
+      <button class="done-del" onclick="deleteFromDone('${item.id}')">×</button>`;
+    c.appendChild(div);
+  });
+}
+
+// ── DELETED ARCHIVE ──
+function loadDeleted() { const s=localStorage.getItem('task-deleted-v1'); deletedTasks=s?JSON.parse(s):[]; updateDeletedBadge(); }
+function saveDeleted() { localStorage.setItem('task-deleted-v1',JSON.stringify(deletedTasks)); updateDeletedBadge(); }
+function updateDeletedBadge() {
+  const b=document.getElementById('deleted-count');
+  b.textContent=deletedTasks.length; b.style.display=deletedTasks.length?'inline-block':'none';
+}
+function clearAllDeleted() {
+  if(!confirm('Permanently delete all items in the Deleted archive?')) return;
+  deletedTasks=[]; saveDeleted(); renderDeleted();
+}
+function restoreFromDeleted(id) {
+  const item=deletedTasks.find(d=>d.id===id); if(!item) return;
+  deletedTasks=deletedTasks.filter(d=>d.id!==id);
+  const {deletedAt,source,...task}=item;
+  if(QUADRANTS.includes(source)) { tasks[source].unshift({...task}); saveTasks(); renderQ(source); }
+  else { inbox.unshift({...task}); saveInbox(); renderInbox(); }
+  saveDeleted(); renderDeleted();
+}
+function permDeleteFromDeleted(id) { deletedTasks=deletedTasks.filter(d=>d.id!==id); saveDeleted(); renderDeleted(); }
+function renderDeleted() {
+  const c=document.getElementById('deleted-list'); updateDeletedBadge();
+  if(!deletedTasks.length){c.innerHTML='<div class="deleted-empty"><span>🧹</span>No deleted tasks.</div>';return;}
+  c.innerHTML='';
+  deletedTasks.forEach(item=>{
+    const div=document.createElement('div'); div.className='deleted-item-card';
+    const srcLabel = QUADRANTS.includes(item.source) ? Q_LABEL[item.source] : '📥 Inbox';
+    div.innerHTML=`
+      <div class="deleted-item-body">
+        <div class="deleted-item-text">${escHtml(item.text)}</div>
+        <div class="deleted-item-meta">From ${srcLabel} · Deleted ${fmtDate(item.deletedAt)} · <span class="task-cat cat-${item.cat}" style="display:inline;font-size:.65rem;padding:1px 6px;border-radius:20px;">${CAT_LABEL[item.cat]||item.cat}</span></div>
+      </div>
+      <button class="deleted-restore" onclick="restoreFromDeleted('${item.id}')">↩ Restore</button>
+      <button class="deleted-perm" onclick="permDeleteFromDeleted('${item.id}')" title="Permanently delete">×</button>`;
+    c.appendChild(div);
+  });
+}
+
+// ── INIT ──
+loadTeam();
+loadTasks();
+loadInbox();
+loadRL();
+loadDone();
+loadDeleted();
+checkReviewDates(); // auto-return any overdue items to inbox
+</script>
+</body>
+</html>
