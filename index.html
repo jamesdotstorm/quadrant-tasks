@@ -218,6 +218,36 @@
     .today-progress-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #4f46e5, #22c55e); transition: width .4s ease; }
     .today-progress-label { font-size: .75rem; color: #6b7280; margin-bottom: 6px; display: flex; justify-content: space-between; }
 
+    /* SCHEDULED PAGE */
+    .scheduled-page-section { margin-bottom: 28px; }
+    .scheduled-page-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f3f4f6; }
+    .scheduled-page-date-label { font-size: .95rem; font-weight: 700; color: #111827; }
+    .scheduled-page-count { font-size: .75rem; color: #9ca3af; }
+    .scheduled-task-card { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s; }
+    .scheduled-task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .scheduled-task-card.done-sched { opacity: .55; }
+    .scheduled-task-card.done-sched .scheduled-task-text { text-decoration: line-through; color: #9ca3af; }
+    .scheduled-task-body { flex: 1; min-width: 0; }
+    .scheduled-task-text { font-size: .875rem; color: #374151; }
+    .scheduled-task-meta { font-size: .72rem; color: #9ca3af; margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .sched-done-btn { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 5px 12px; font-size: .78rem; color: #6b7280; cursor: pointer; white-space: nowrap; transition: border-color .15s, color .15s, background .15s; flex-shrink: 0; }
+    .sched-done-btn:hover { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .sched-recall-btn { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 5px 12px; font-size: .78rem; color: #6b7280; cursor: pointer; white-space: nowrap; transition: border-color .15s, color .15s; flex-shrink: 0; }
+    .sched-recall-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+    .sched-del-btn { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: 1rem; padding: 4px; flex-shrink: 0; }
+    .sched-del-btn:hover { color: #ef4444; }
+    .sched-overdue-label { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #fef2f2; color: #dc2626; white-space: nowrap; }
+    .sched-today-label { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #f0fdf4; color: #16a34a; white-space: nowrap; }
+    .scheduled-page-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 60px 0; }
+    .scheduled-page-empty span { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .sched-filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .sched-filter-btn { background: white; border: 1px solid #e5e7eb; border-radius: 20px; padding: 5px 14px; font-size: .8rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .sched-filter-btn.active { background: #22c55e; color: white; border-color: #22c55e; font-weight: 600; }
+    .delegated-task-date-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .delegated-task-date-label { font-size: .72rem; color: #9ca3af; white-space: nowrap; }
+    .delegated-task-date-input { border: 1px solid #e5e7eb; border-radius: 7px; padding: 3px 8px; font-size: .75rem; font-family: inherit; outline: none; color: #374151; cursor: pointer; background: white; }
+    .delegated-task-date-input:focus { border-color: #f59e0b; }
+
     /* DELEGATED PAGE */
     .delegated-person-section { margin-bottom: 28px; }
     .delegated-person-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #f3f4f6; }
@@ -301,6 +331,9 @@
   </div>
   <div class="nav-tab" onclick="showPage('deleted')" id="tab-deleted">
     🗑 Deleted <span class="nav-badge" id="deleted-count" style="display:none;background:#6b7280">0</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('scheduled')" id="tab-scheduled">
+    📅 Scheduled <span class="nav-badge" id="scheduled-page-badge" style="display:none;background:#22c55e">0</span>
   </div>
   <div class="nav-tab" onclick="showPage('delegated')" id="tab-delegated">
     ⚡ Delegated <span class="nav-badge" id="delegated-badge" style="display:none;background:#f59e0b">0</span>
@@ -429,6 +462,23 @@
     </div>
     <button class="clear-all-btn" onclick="clearAllDeleted()">🗑 Permanently delete all</button>
     <div id="deleted-list"></div>
+  </div>
+</div>
+
+<!-- SCHEDULED TASKS -->
+<div class="page" id="page-scheduled">
+  <div class="page-wrap" style="max-width:800px;">
+    <div class="page-header">
+      <h2>📅 Scheduled Tasks</h2>
+      <p>Tasks with a scheduled date live here. Recall to reschedule, or mark done when complete.</p>
+    </div>
+    <div class="sched-filter-row">
+      <button class="sched-filter-btn active" id="sfilter-upcoming" onclick="setSchedFilter('upcoming')">⏳ Upcoming</button>
+      <button class="sched-filter-btn" id="sfilter-today" onclick="setSchedFilter('today')">🌟 Today</button>
+      <button class="sched-filter-btn" id="sfilter-overdue" onclick="setSchedFilter('overdue')">⚠️ Overdue</button>
+      <button class="sched-filter-btn" id="sfilter-all-sched" onclick="setSchedFilter('all')">All</button>
+    </div>
+    <div id="scheduled-page-list"></div>
   </div>
 </div>
 
@@ -639,7 +689,126 @@ function setInboxAssignee(id, name) {
 function setScheduledDate(q, id, date) {
   const t = tasks[q] && tasks[q].find(t => t.id === id); if (!t) return;
   t.scheduledDate = date || null;
-  saveTasks(); renderQ(q);
+  // Auto-move out of q2 into scheduled page when date is set
+  if (q === 'q2' && date) {
+    tasks[q] = tasks[q].filter(x => x.id !== id);
+    scheduledTasks.unshift({ ...t, scheduledDate: date, source: q, schedDone: false });
+    saveTasks(); saveScheduled(); renderQ(q);
+    updateScheduledBadge();
+  } else {
+    saveTasks(); renderQ(q);
+  }
+}
+
+// ── SCHEDULED TASKS PAGE ──
+function loadScheduled() {
+  const s = localStorage.getItem('task-scheduled-v1');
+  scheduledTasks = s ? JSON.parse(s) : [];
+  updateScheduledBadge();
+}
+function saveScheduled() {
+  localStorage.setItem('task-scheduled-v1', JSON.stringify(scheduledTasks));
+  updateScheduledBadge();
+}
+function updateScheduledBadge() {
+  const b = document.getElementById('scheduled-page-badge');
+  if (!b) return;
+  const todayStr = today();
+  const due = scheduledTasks.filter(t => !t.schedDone && t.scheduledDate <= todayStr).length;
+  b.textContent = due;
+  b.style.display = due ? 'inline-block' : 'none';
+}
+function markSchedDone(id) {
+  const t = scheduledTasks.find(t => t.id === id); if (!t) return;
+  t.schedDone = true; t.schedDoneAt = today();
+  saveScheduled(); renderScheduledPage();
+  renderTodayPage();
+}
+function recallScheduled(id) {
+  const t = scheduledTasks.find(t => t.id === id); if (!t) return;
+  scheduledTasks = scheduledTasks.filter(x => x.id !== id);
+  const { schedDone, schedDoneAt, source, ...task } = t;
+  tasks['q2'].unshift({ ...task });
+  saveScheduled(); saveTasks(); renderQ('q2'); renderScheduledPage();
+}
+function deleteScheduled(id) {
+  scheduledTasks = scheduledTasks.filter(t => t.id !== id);
+  saveScheduled(); renderScheduledPage();
+}
+function setDelegatedScheduledDate(id, date) {
+  const t = delegatedTasks.find(t => t.id === id); if (!t) return;
+  t.scheduledDate = date || null;
+  saveDelegated(); renderDelegatedPage(); renderTodayPage();
+}
+function setSchedFilter(f) {
+  schedFilter = f;
+  document.querySelectorAll('.sched-filter-btn').forEach(b => b.classList.remove('active'));
+  const map = { upcoming:'sfilter-upcoming', today:'sfilter-today', overdue:'sfilter-overdue', all:'sfilter-all-sched' };
+  document.getElementById(map[f]).classList.add('active');
+  renderScheduledPage();
+}
+function renderScheduledPage() {
+  const c = document.getElementById('scheduled-page-list'); if (!c) return;
+  updateScheduledBadge();
+  const todayStr = today();
+
+  let list = scheduledTasks.filter(t => !t.schedDone);
+  if (schedFilter === 'today')    list = list.filter(t => t.scheduledDate === todayStr);
+  if (schedFilter === 'overdue')  list = list.filter(t => t.scheduledDate < todayStr);
+  if (schedFilter === 'upcoming') list = list.filter(t => t.scheduledDate >= todayStr);
+
+  if (!list.length) {
+    c.innerHTML = `<div class="scheduled-page-empty"><span>📅</span>${
+      schedFilter === 'today' ? 'Nothing scheduled for today.' :
+      schedFilter === 'overdue' ? 'No overdue tasks — you\'re on top of it!' :
+      'No upcoming scheduled tasks.'
+    }</div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  list.forEach(t => {
+    const k = t.scheduledDate || 'No date';
+    if (!byDate[k]) byDate[k] = [];
+    byDate[k].push(t);
+  });
+
+  c.innerHTML = '';
+  Object.keys(byDate).sort().forEach(dateKey => {
+    const items = byDate[dateKey];
+    const isToday   = dateKey === todayStr;
+    const isOverdue = dateKey < todayStr;
+    const label = isToday ? '🌟 Today' : isOverdue ? `⚠️ Overdue — ${fmtDate(dateKey)}` : `📅 ${fmtDate(dateKey)}`;
+
+    const sec = document.createElement('div');
+    sec.className = 'scheduled-page-section';
+    sec.innerHTML = `<div class="scheduled-page-header">
+      <span class="scheduled-page-date-label">${label}</span>
+      <span class="scheduled-page-count">${items.length} task${items.length !== 1 ? 's' : ''}</span>
+    </div>`;
+
+    items.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'scheduled-task-card';
+      const statusTag = isToday
+        ? `<span class="sched-today-label">Today</span>`
+        : isOverdue ? `<span class="sched-overdue-label">Overdue</span>` : '';
+      card.innerHTML = `
+        <div class="scheduled-task-body">
+          <div class="scheduled-task-text">${escHtml(t.text)}</div>
+          <div class="scheduled-task-meta">
+            <span class="task-cat cat-${t.cat}">${CAT_LABEL[t.cat]||t.cat}</span>
+            ${statusTag}
+          </div>
+        </div>
+        <button class="sched-done-btn" onclick="markSchedDone('${t.id}')">✓ Done</button>
+        <button class="sched-recall-btn" onclick="recallScheduled('${t.id}')">↩ Reschedule</button>
+        <button class="sched-del-btn" onclick="deleteScheduled('${t.id}')" title="Remove">×</button>`;
+      sec.appendChild(card);
+    });
+    c.appendChild(sec);
+  });
 }
 function setInboxScheduledDate(id, date) {
   const item = inbox.find(i => i.id === id); if (!item) return;
@@ -878,13 +1047,21 @@ function renderDelegatedPage() {
       const statusBadge = t.delegateDone
         ? `<span class="delegated-status-badge status-done">✅ Done ${fmtDate(t.delegateDoneAt)}</span>`
         : `<span class="delegated-status-badge status-pending">⏳ Pending</span>`;
+      const schedTag = t.scheduledDate
+        ? `<span class="scheduled-badge${t.scheduledDate < today() ? ' overdue' : ''}">📅 ${fmtDate(t.scheduledDate)}</span>` : '';
       card.innerHTML = `
         <div class="delegated-task-body">
           <div class="delegated-task-text">${escHtml(t.text)}</div>
           <div class="delegated-task-meta">
             <span class="task-cat cat-${t.cat}">${CAT_LABEL[t.cat] || t.cat}</span>
             Delegated ${fmtDate(t.delegatedAt)}
-            ${statusBadge}
+            ${statusBadge} ${schedTag}
+          </div>
+          <div class="delegated-task-date-row">
+            <span class="delegated-task-date-label">📅 Due:</span>
+            <input type="date" class="delegated-task-date-input" value="${t.scheduledDate||''}"
+              onchange="setDelegatedScheduledDate('${t.id}',this.value)" />
+            ${t.scheduledDate ? `<button style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:.8rem;" onclick="setDelegatedScheduledDate('${t.id}',null)">✕</button>` : ''}
           </div>
         </div>
         ${!t.delegateDone ? `<button class="delegated-done-btn" onclick="markDelegatedDone('${t.id}')">✓ Done</button>` : ''}
@@ -896,9 +1073,9 @@ function renderDelegatedPage() {
   });
 }
 
-let tasks = {}, inbox = [], reviewLater = [], doneTasks = [], deletedTasks = [], delegatedTasks = [];
+let tasks = {}, inbox = [], reviewLater = [], doneTasks = [], deletedTasks = [], delegatedTasks = [], scheduledTasks = [];
 let dragTaskId = null, dragFromQ = null;
-let delegatedFilter = 'all';
+let delegatedFilter = 'all', schedFilter = 'upcoming';
 
 const SEED = {
   q1:[
@@ -943,6 +1120,7 @@ function showPage(name) {
   if (name === 'deleted') renderDeleted();
   if (name === 'teampage') renderTeamPage();
   if (name === 'delegated') renderDelegatedPage();
+  if (name === 'scheduled') renderScheduledPage();
   if (name === 'today') renderTodayPage();
 }
 
@@ -1393,6 +1571,7 @@ function renderDeleted() {
 loadTeam();
 renderTeamPage();
 loadDelegated();
+loadScheduled();
 loadTasks();
 renderTodayPage();
 loadInbox();
