@@ -570,7 +570,14 @@ function teamOpts(selected) {
 }
 function setAssignee(q, id, name) {
   const t = tasks[q] && tasks[q].find(t => t.id === id);
-  if (t) { t.assignee = name || null; saveTasks(); renderQ(q); }
+  if (!t) return;
+  t.assignee = name || null;
+  if (q === 'q3' && name) {
+    // Auto-delegate immediately
+    delegateTask(q, id);
+  } else {
+    saveTasks(); renderQ(q);
+  }
 }
 function setInboxAssignee(id, name) {
   const item = inbox.find(i => i.id === id);
@@ -599,8 +606,6 @@ function delegateTask(q, id) {
   tasks[q] = tasks[q].filter(x => x.id !== id);
   delegatedTasks.unshift({ ...t, delegatedAt: today(), delegateDone: false, source: q });
   saveTasks(); saveDelegated(); renderQ(q);
-  // Flash to delegated page
-  showPage('delegated');
 }
 function markDelegatedDone(id) {
   const t = delegatedTasks.find(t => t.id === id); if (!t) return;
@@ -968,9 +973,6 @@ function renderQ(q) {
     div.className='task'+(t.done?' done':'')+(isOverdue?' review-due':'');
     div.draggable=true; div.dataset.id=t.id; div.dataset.q=q;
     const assigneeBadge = t.assignee ? `<span class="assignee-badge">👤 ${escHtml(t.assignee)}</span>` : '';
-    const delegateBtn = (q === 'q3' && t.assignee)
-      ? `<button class="delegate-now-btn" onclick="delegateTask('${q}','${t.id}')">Delegate →</button>`
-      : '';
     const assigneeRow = (q === 'q3' || t.assignee) ? `
       <div class="task-assignee-row">
         <span class="task-assignee-label">Assign to:</span>
@@ -978,7 +980,6 @@ function renderQ(q) {
           ${teamOpts(t.assignee||'')}
         </select>
         ${assigneeBadge}
-        ${delegateBtn}
       </div>` : '';
     div.innerHTML=`
       <div class="task-row">
