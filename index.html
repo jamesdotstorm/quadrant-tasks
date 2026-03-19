@@ -162,6 +162,18 @@
 
     .empty-state { text-align: center; color: #d1d5db; font-size: .8rem; padding: 24px 12px; }
 
+    /* RL POPOVER */
+    .rl-popover { position: absolute; z-index: 200; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.12); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+    .rl-popover label { font-size: .75rem; color: #6b7280; font-weight: 500; }
+    .rl-popover input[type="date"] { border: 1px solid #e5e7eb; border-radius: 7px; padding: 5px 8px; font-size: .8rem; font-family: inherit; outline: none; width: 100%; }
+    .rl-popover input[type="date"]:focus { border-color: #a78bfa; }
+    .rl-popover-btns { display: flex; gap: 6px; }
+    .rl-popover-park { flex: 1; background: #7c3aed; color: white; border: none; border-radius: 7px; padding: 6px 10px; font-size: .78rem; font-weight: 600; cursor: pointer; }
+    .rl-popover-park:hover { opacity: .88; }
+    .rl-popover-nodate { flex: 1; background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 6px 10px; font-size: .78rem; color: #6b7280; cursor: pointer; }
+    .rl-popover-nodate:hover { border-color: #a78bfa; color: #7c3aed; }
+    .task-btn-wrap { position: relative; display: inline-flex; }
+
     /* ASSIGNEE */
     .task-assignee-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #f9fafb; flex-wrap: wrap; }
     .task-assignee-label { font-size: .7rem; color: #9ca3af; white-space: nowrap; }
@@ -646,7 +658,9 @@ function renderQ(q) {
         <span class="task-text" contenteditable="true" onblur="editTask('${q}','${t.id}',this)">${escHtml(t.text)}</span>
         <span class="task-cat cat-${t.cat}">${CAT_LABEL[t.cat]||t.cat}</span>
         <div class="task-actions">
-          <button class="task-btn rl-btn" onclick="showRLModal('${q}','${t.id}')" title="Review Later">🕐</button>
+          <div class="task-btn-wrap">
+            <button class="task-btn rl-btn" onclick="showRLModal('${q}','${t.id}',this)" title="Review Later">🕐</button>
+          </div>
           <button class="task-btn delete-btn" onclick="deleteTask('${q}','${t.id}')" title="Delete">×</button>
         </div>
       </div>
@@ -662,12 +676,41 @@ function renderQ(q) {
   });
 }
 
-// ── RL MODAL (quick park from quadrant) ──
-function showRLModal(q, id) {
-  const t = tasks[q].find(t=>t.id===id); if(!t) return;
-  const date = prompt(`Park "${t.text}" in Review Later.\n\nEnter a return date (YYYY-MM-DD) or leave blank to park without a date:`);
-  if (date === null) return; // cancelled
-  moveTaskToRL(q, id, date.trim() || null);
+// ── RL POPOVER (inline, no native prompt) ──
+let _rlPopoverCleanup = null;
+function showRLModal(q, id, btnEl) {
+  // Close any existing popover
+  closeRLPopover();
+
+  const t = tasks[q] && tasks[q].find(t=>t.id===id); if(!t) return;
+
+  const wrap = btnEl.closest('.task-btn-wrap');
+  const pop = document.createElement('div');
+  pop.className = 'rl-popover';
+  pop.id = 'rl-pop-active';
+  pop.innerHTML = `
+    <label>Park "${escHtml(t.text.slice(0,30))}${t.text.length>30?'…':''}" in Review Later</label>
+    <input type="date" id="rl-pop-date" placeholder="Return date (optional)" />
+    <div class="rl-popover-btns">
+      <button class="rl-popover-nodate" onclick="confirmRL('${q}','${id}',null)">🕐 No date</button>
+      <button class="rl-popover-park" onclick="confirmRL('${q}','${id}',document.getElementById('rl-pop-date').value||null)">Park →</button>
+    </div>`;
+  wrap.appendChild(pop);
+
+  // Close on outside click
+  setTimeout(() => {
+    _rlPopoverCleanup = (e) => { if (!pop.contains(e.target) && e.target !== btnEl) closeRLPopover(); };
+    document.addEventListener('mousedown', _rlPopoverCleanup);
+  }, 0);
+}
+function closeRLPopover() {
+  const existing = document.getElementById('rl-pop-active');
+  if (existing) existing.remove();
+  if (_rlPopoverCleanup) { document.removeEventListener('mousedown', _rlPopoverCleanup); _rlPopoverCleanup = null; }
+}
+function confirmRL(q, id, date) {
+  closeRLPopover();
+  moveTaskToRL(q, id, date || null);
 }
 
 function onDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
