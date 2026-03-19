@@ -1037,11 +1037,11 @@ function renderQ(q) {
           <button class="task-btn delete-btn" onclick="deleteTask('${q}','${t.id}')" title="Delete">×</button>
         </div>
       </div>
-      ${q === 'q2' ? `<div class="task-meta">
+      <div class="task-meta">
         <span class="task-scheduled-label">📅 Scheduled for:</span>
         <input type="date" class="task-scheduled-input" value="${t.scheduledDate||''}" onchange="setScheduledDate('${q}','${t.id}',this.value)" title="Scheduled date" />
         ${t.scheduledDate ? `<span class="scheduled-badge${t.scheduledDate < today() ? ' overdue' : ''}">📅 ${fmtDate(t.scheduledDate)}</span><button class="task-clear-scheduled" onclick="setScheduledDate('${q}','${t.id}',null)">✕</button>` : ''}
-      </div>` : ''}
+      </div>
       ${assigneeRow}`;
     div.addEventListener('dragstart',e=>{dragTaskId=t.id;dragFromQ=q;setTimeout(()=>div.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
     div.addEventListener('dragend',()=>{div.classList.remove('dragging');dragTaskId=null;dragFromQ=null;});
