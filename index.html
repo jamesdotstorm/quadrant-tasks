@@ -843,18 +843,24 @@ function renderTodayPage() {
   // Section 1: Do First (q1) — all non-done tasks
   const doFirst = (tasks['q1'] || []).filter(t => !t.done);
 
-  // Section 2: Scheduled today — from scheduledTasks store + any quadrant tasks with today's date
+  // Section 2: Scheduled today + overdue — from scheduledTasks store + quadrant tasks
   const scheduledToday = [
     ...scheduledTasks.filter(t => !t.schedDone && t.scheduledDate === todayStr),
     ...QUADRANTS.flatMap(q =>
       (tasks[q] || []).filter(t => !t.done && t.scheduledDate === todayStr && q !== 'q1')
     )
   ];
+  const overdueScheduled = [
+    ...scheduledTasks.filter(t => !t.schedDone && t.scheduledDate < todayStr),
+    ...QUADRANTS.flatMap(q =>
+      (tasks[q] || []).filter(t => !t.done && t.scheduledDate && t.scheduledDate < todayStr && q !== 'q1')
+    )
+  ].sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
 
   // Section 3: Delegated today — delegated tasks with scheduledDate = today, not done
   const delegatedToday = delegatedTasks.filter(t => !t.delegateDone && t.scheduledDate === todayStr);
 
-  const totalTasks = doFirst.length + scheduledToday.length + delegatedToday.length;
+  const totalTasks = doFirst.length + scheduledToday.length + overdueScheduled.length + delegatedToday.length;
   const doneTodayCount = (tasks['q1'] || []).filter(t => t.done).length; // rough proxy
 
   // Progress bar
@@ -891,6 +897,22 @@ function renderTodayPage() {
     s2.appendChild(emptyRow('No tasks scheduled for today.'));
   }
   c.appendChild(s2);
+
+  // ── Section: Overdue ──
+  if (overdueScheduled.length) {
+    const sOD = makeSection('⚠️', 'Overdue', overdueScheduled.length);
+    sOD.querySelector('.today-section-title').style.color = '#dc2626';
+    overdueScheduled.forEach(t => {
+      const fromStore = t.hasOwnProperty('schedDone');
+      const q = fromStore ? null : QUADRANTS.find(q => (tasks[q]||[]).find(x => x.id === t.id));
+      const card = makeTodayTaskCard(t, q, 'scheduled');
+      // Add overdue date tag
+      const meta = card.querySelector('.today-task-meta');
+      if (meta) meta.innerHTML += `<span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:#fef2f2;color:#dc2626;">⚠️ Due ${fmtDate(t.scheduledDate)}</span>`;
+      sOD.appendChild(card);
+    });
+    c.appendChild(sOD);
+  }
 
   // ── Section: Delegated Today ──
   const s3 = makeSection('⚡', 'Delegated Today', delegatedToday.length);
