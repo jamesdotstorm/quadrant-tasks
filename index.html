@@ -843,10 +843,13 @@ function renderTodayPage() {
   // Section 1: Do First (q1) — all non-done tasks
   const doFirst = (tasks['q1'] || []).filter(t => !t.done);
 
-  // Section 2: Scheduled today — tasks in any quadrant with scheduledDate = today, not done
-  const scheduledToday = QUADRANTS.flatMap(q =>
-    (tasks[q] || []).filter(t => !t.done && t.scheduledDate === todayStr && q !== 'q1')
-  );
+  // Section 2: Scheduled today — from scheduledTasks store + any quadrant tasks with today's date
+  const scheduledToday = [
+    ...scheduledTasks.filter(t => !t.schedDone && t.scheduledDate === todayStr),
+    ...QUADRANTS.flatMap(q =>
+      (tasks[q] || []).filter(t => !t.done && t.scheduledDate === todayStr && q !== 'q1')
+    )
+  ];
 
   // Section 3: Delegated today — delegated tasks with scheduledDate = today, not done
   const delegatedToday = delegatedTasks.filter(t => !t.delegateDone && t.scheduledDate === todayStr);
@@ -879,7 +882,9 @@ function renderTodayPage() {
   const s2 = makeSection('📅', 'Scheduled Today', scheduledToday.length);
   if (scheduledToday.length) {
     scheduledToday.forEach(t => {
-      const q = QUADRANTS.find(q => (tasks[q]||[]).find(x => x.id === t.id));
+      // Check if it's in scheduledTasks store (has schedDone) or still in a quadrant
+      const fromStore = t.hasOwnProperty('schedDone');
+      const q = fromStore ? null : QUADRANTS.find(q => (tasks[q]||[]).find(x => x.id === t.id));
       s2.appendChild(makeTodayTaskCard(t, q, 'scheduled'));
     });
   } else {
@@ -932,10 +937,11 @@ function makeTodayTaskCard(t, q, type, avatarColor) {
     const member = team.find(m => m.name === t.assignee);
     const color  = member ? member.color : '#6b7280';
     checkHtml = `<div class="today-delegated-avatar" style="background:${color}">${initials(t.assignee||'?')}</div>`;
+  } else if (type === 'scheduled' && !q) {
+    // From scheduledTasks store
+    checkHtml = `<input type="checkbox" class="today-task-check" style="accent-color:${accentColor}" ${t.schedDone?'checked':''} onchange="markSchedDone('${t.id}');renderTodayPage()" />`;
   } else {
-    const onchange = q
-      ? `toggleDone('${q}','${t.id}');renderTodayPage()`
-      : '';
+    const onchange = q ? `toggleDone('${q}','${t.id}');renderTodayPage()` : '';
     checkHtml = `<input type="checkbox" class="today-task-check" style="accent-color:${accentColor}" ${t.done?'checked':''} onchange="${onchange}" />`;
   }
 
