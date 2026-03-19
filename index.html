@@ -878,9 +878,9 @@ function renderInbox() {
           <select id="csel-${item.id}">${catOpts}</select>
         </div>
         <div class="inbox-review-row">
-          <span class="inbox-review-label">Review later:</span>
-          <input type="date" class="inbox-review-input" id="rldate-${item.id}" placeholder="optional date" onchange="if(this.value) moveInboxToRL('${item.id}',this.value)" />
-          <button class="inbox-rl-btn" onclick="moveInboxToRL('${item.id}',document.getElementById('rldate-${item.id}').value||null)">🕐 Park it (no date)</button>
+          <div class="task-btn-wrap">
+            <button class="inbox-rl-btn" onclick="showInboxRLModal('${item.id}',this)" title="Review Later">🕐 Review later</button>
+          </div>
         </div>
         <div class="inbox-assignee-row">
           <span class="inbox-review-label">Assign to:</span>
@@ -1083,6 +1083,37 @@ function showRLModal(q, id, btnEl) {
     document.addEventListener('mousedown', _rlPopoverCleanup);
   }, 0);
 }
+function showInboxRLModal(id, btnEl) {
+  closeRLPopover();
+  const item = inbox.find(i => i.id === id); if (!item) return;
+
+  const pop = document.createElement('div');
+  pop.className = 'rl-popover';
+  pop.id = 'rl-pop-active';
+  pop.innerHTML = `
+    <label>🕐 Park "${escHtml(item.text.slice(0,28))}${item.text.length>28?'…':''}"</label>
+    <input type="date" id="rl-pop-date" />
+    <div class="rl-popover-btns">
+      <button class="rl-popover-nodate" onclick="moveInboxToRL('${id}',null);closeRLPopover()">No date</button>
+      <button class="rl-popover-park" onclick="moveInboxToRL('${id}',document.getElementById('rl-pop-date').value||null);closeRLPopover()">Park →</button>
+    </div>`;
+  document.body.appendChild(pop);
+
+  const rect = btnEl.getBoundingClientRect();
+  const popW = 230, popH = 140;
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+  if (top + popH > window.innerHeight - 8) top = rect.top - popH - 6;
+  pop.style.top  = top  + 'px';
+  pop.style.left = left + 'px';
+
+  setTimeout(() => {
+    _rlPopoverCleanup = (e) => { if (!pop.contains(e.target) && e.target !== btnEl) closeRLPopover(); };
+    document.addEventListener('mousedown', _rlPopoverCleanup);
+  }, 0);
+}
+
 function closeRLPopover() {
   const existing = document.getElementById('rl-pop-active');
   if (existing) existing.remove();
