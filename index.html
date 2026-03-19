@@ -318,6 +318,10 @@
 
 <nav>
   <div class="nav-brand">⚡ Tasks</div>
+  <div style="margin-left:auto;display:flex;gap:6px;padding:0 8px;">
+    <button onclick="exportData()" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Export all data">⬇️ Export</button>
+    <label style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Import data">⬆️ Import<input type="file" accept=".json" onchange="importData(event)" style="display:none"/></label>
+  </div>
   <div class="nav-tab active" onclick="showPage('today')" id="tab-today">🌟 Today</div>
   <div class="nav-tab" onclick="showPage('inbox')" id="tab-inbox">
     📥 Inbox <span class="nav-badge" id="inbox-count" style="display:none">0</span>
@@ -1593,6 +1597,51 @@ function renderDeleted() {
       <button class="deleted-perm" onclick="permDeleteFromDeleted('${item.id}')" title="Permanently delete">×</button>`;
     c.appendChild(div);
   });
+}
+
+// ── EXPORT / IMPORT ──
+function exportData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    tasks:          localStorage.getItem('quadrant-tasks-v2'),
+    inbox:          localStorage.getItem('task-inbox-v1'),
+    reviewLater:    localStorage.getItem('task-rl-v1'),
+    doneTasks:      localStorage.getItem('task-done-v1'),
+    deletedTasks:   localStorage.getItem('task-deleted-v1'),
+    delegatedTasks: localStorage.getItem('task-delegated-v1'),
+    scheduledTasks: localStorage.getItem('task-scheduled-v1'),
+    team:           localStorage.getItem('task-team-v2'),
+    inboxSeeded:    localStorage.getItem('inbox-seeded-v1'),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `tasks-backup-${today()}.json`;
+  a.click();
+}
+function importData(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.version !== 1) { alert('Unrecognised backup format.'); return; }
+      if (!confirm('This will replace all your current tasks with the backup. Continue?')) return;
+      if (data.tasks)          localStorage.setItem('quadrant-tasks-v2',   data.tasks);
+      if (data.inbox)          localStorage.setItem('task-inbox-v1',       data.inbox);
+      if (data.reviewLater)    localStorage.setItem('task-rl-v1',          data.reviewLater);
+      if (data.doneTasks)      localStorage.setItem('task-done-v1',        data.doneTasks);
+      if (data.deletedTasks)   localStorage.setItem('task-deleted-v1',     data.deletedTasks);
+      if (data.delegatedTasks) localStorage.setItem('task-delegated-v1',   data.delegatedTasks);
+      if (data.scheduledTasks) localStorage.setItem('task-scheduled-v1',   data.scheduledTasks);
+      if (data.team)           localStorage.setItem('task-team-v2',        data.team);
+      if (data.inboxSeeded)    localStorage.setItem('inbox-seeded-v1',     data.inboxSeeded);
+      alert('Import successful! Reloading…');
+      location.reload();
+    } catch(err) { alert('Failed to import: ' + err.message); }
+  };
+  reader.readAsText(file);
 }
 
 // ── INIT ──
