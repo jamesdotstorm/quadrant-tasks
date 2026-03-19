@@ -184,6 +184,37 @@
     .team-btn { font-size: .7rem; color: #9ca3af; background: none; border: 1px solid #e5e7eb; cursor: pointer; padding: 2px 8px; border-radius: 5px; transition: color .15s, border-color .15s; margin-left: 6px; }
     .team-btn:hover { color: #f59e0b; border-color: #f59e0b; }
 
+    /* DELEGATED PAGE */
+    .delegated-person-section { margin-bottom: 28px; }
+    .delegated-person-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #f3f4f6; }
+    .delegated-person-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; color: white; flex-shrink: 0; }
+    .delegated-person-name { font-size: 1rem; font-weight: 700; color: #111827; }
+    .delegated-person-count { font-size: .75rem; color: #9ca3af; margin-left: 4px; }
+    .delegated-task-card { background: white; border: 1px solid #f3f4f6; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: box-shadow .15s; }
+    .delegated-task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .delegated-task-card.completed { opacity: .65; }
+    .delegated-task-card.completed .delegated-task-text { text-decoration: line-through; color: #9ca3af; }
+    .delegated-task-body { flex: 1; min-width: 0; }
+    .delegated-task-text { font-size: .875rem; color: #374151; line-height: 1.4; }
+    .delegated-task-meta { font-size: .72rem; color: #9ca3af; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .delegated-status-badge { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .status-pending { background: #fff7ed; color: #c2410c; }
+    .status-done { background: #f0fdf4; color: #15803d; }
+    .delegated-done-btn { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 5px 12px; font-size: .78rem; color: #6b7280; cursor: pointer; white-space: nowrap; transition: border-color .15s, color .15s, background .15s; flex-shrink: 0; }
+    .delegated-done-btn:hover { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .delegated-recall-btn { background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 5px 12px; font-size: .78rem; color: #6b7280; cursor: pointer; white-space: nowrap; transition: border-color .15s, color .15s; flex-shrink: 0; }
+    .delegated-recall-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+    .delegated-del-btn { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: 1rem; padding: 4px; flex-shrink: 0; }
+    .delegated-del-btn:hover { color: #ef4444; }
+    .delegated-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 60px 0; }
+    .delegated-empty span { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+    .delegate-now-btn { background: #f59e0b; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity .15s; flex-shrink: 0; }
+    .delegate-now-btn:hover { opacity: .88; }
+    .delegate-now-btn:disabled { background: #d1d5db; cursor: default; opacity: 1; }
+    .delegated-filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .delegated-filter-btn { background: white; border: 1px solid #e5e7eb; border-radius: 20px; padding: 5px 14px; font-size: .8rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .delegated-filter-btn.active { background: #f59e0b; color: white; border-color: #f59e0b; font-weight: 600; }
+
     /* TEAM PAGE */
     .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
     .team-card { background: white; border: 1px solid #f3f4f6; border-radius: 16px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.05); transition: box-shadow .15s; }
@@ -235,6 +266,9 @@
   </div>
   <div class="nav-tab" onclick="showPage('deleted')" id="tab-deleted">
     🗑 Deleted <span class="nav-badge" id="deleted-count" style="display:none;background:#6b7280">0</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('delegated')" id="tab-delegated">
+    ⚡ Delegated <span class="nav-badge" id="delegated-badge" style="display:none;background:#f59e0b">0</span>
   </div>
   <div class="nav-tab" onclick="showPage('teampage')" id="tab-teampage">👥 Team</div>
 </nav>
@@ -344,6 +378,22 @@
     </div>
     <button class="clear-all-btn" onclick="clearAllDeleted()">🗑 Permanently delete all</button>
     <div id="deleted-list"></div>
+  </div>
+</div>
+
+<!-- DELEGATED TASKS -->
+<div class="page" id="page-delegated">
+  <div class="page-wrap" style="max-width:800px;">
+    <div class="page-header">
+      <h2>⚡ Delegated Tasks</h2>
+      <p>Tasks you've delegated to your team. Mark complete when they report back, or recall if needed.</p>
+    </div>
+    <div class="delegated-filter-row">
+      <button class="delegated-filter-btn active" id="dfilter-all" onclick="setDelegatedFilter('all')">All</button>
+      <button class="delegated-filter-btn" id="dfilter-pending" onclick="setDelegatedFilter('pending')">⏳ Pending</button>
+      <button class="delegated-filter-btn" id="dfilter-done" onclick="setDelegatedFilter('done')">✅ Done</button>
+    </div>
+    <div id="delegated-list"></div>
   </div>
 </div>
 
@@ -464,9 +514,7 @@ function toggleEditCard(id) {
 }
 function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
 function delegatedCount(name) {
-  let count = 0;
-  QUADRANTS.forEach(q => { count += (tasks[q]||[]).filter(t => !t.done && t.assignee === name).length; });
-  return count;
+  return delegatedTasks.filter(t => !t.delegateDone && t.assignee === name).length;
 }
 function renderTeamPage() {
   const grid = document.getElementById('team-grid'); if (!grid) return;
@@ -529,8 +577,118 @@ function setInboxAssignee(id, name) {
   if (item) { item.assignee = name || null; saveInbox(); }
 }
 
-let tasks = {}, inbox = [], reviewLater = [], doneTasks = [], deletedTasks = [];
+// ── DELEGATED TASKS ──
+function loadDelegated() {
+  const s = localStorage.getItem('task-delegated-v1');
+  delegatedTasks = s ? JSON.parse(s) : [];
+  updateDelegatedBadge();
+}
+function saveDelegated() {
+  localStorage.setItem('task-delegated-v1', JSON.stringify(delegatedTasks));
+  updateDelegatedBadge();
+}
+function updateDelegatedBadge() {
+  const b = document.getElementById('delegated-badge');
+  const pending = delegatedTasks.filter(t => !t.delegateDone).length;
+  b.textContent = pending;
+  b.style.display = pending ? 'inline-block' : 'none';
+}
+function delegateTask(q, id) {
+  const t = tasks[q] && tasks[q].find(t => t.id === id);
+  if (!t || !t.assignee) return;
+  tasks[q] = tasks[q].filter(x => x.id !== id);
+  delegatedTasks.unshift({ ...t, delegatedAt: today(), delegateDone: false, source: q });
+  saveTasks(); saveDelegated(); renderQ(q);
+  // Flash to delegated page
+  showPage('delegated');
+}
+function markDelegatedDone(id) {
+  const t = delegatedTasks.find(t => t.id === id); if (!t) return;
+  t.delegateDone = true; t.delegateDoneAt = today();
+  saveDelegated(); renderDelegatedPage();
+}
+function recallDelegated(id) {
+  const t = delegatedTasks.find(t => t.id === id); if (!t) return;
+  delegatedTasks = delegatedTasks.filter(x => x.id !== id);
+  const { delegatedAt, delegateDone, delegateDoneAt, source, ...task } = t;
+  tasks['q3'].unshift({ ...task });
+  saveDelegated(); saveTasks(); renderQ('q3'); renderDelegatedPage();
+}
+function deleteDelegated(id) {
+  delegatedTasks = delegatedTasks.filter(t => t.id !== id);
+  saveDelegated(); renderDelegatedPage();
+}
+function setDelegatedFilter(f) {
+  delegatedFilter = f;
+  document.querySelectorAll('.delegated-filter-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('dfilter-' + f).classList.add('active');
+  renderDelegatedPage();
+}
+function renderDelegatedPage() {
+  const c = document.getElementById('delegated-list'); if (!c) return;
+  updateDelegatedBadge();
+
+  let filtered = delegatedTasks;
+  if (delegatedFilter === 'pending') filtered = filtered.filter(t => !t.delegateDone);
+  if (delegatedFilter === 'done')    filtered = filtered.filter(t => t.delegateDone);
+
+  if (!filtered.length) {
+    c.innerHTML = `<div class="delegated-empty"><span>⚡</span>${delegatedFilter === 'done' ? 'No completed delegations yet.' : delegatedFilter === 'pending' ? 'Nothing pending — team is all caught up!' : 'No delegated tasks yet.<br><small>Assign someone in the Delegate quadrant and hit "Delegate →"</small>'}</div>`;
+    return;
+  }
+
+  // Group by assignee
+  const byPerson = {};
+  filtered.forEach(t => {
+    const key = t.assignee || 'Unassigned';
+    if (!byPerson[key]) byPerson[key] = [];
+    byPerson[key].push(t);
+  });
+
+  c.innerHTML = '';
+  Object.entries(byPerson).forEach(([name, items]) => {
+    const member = team.find(m => m.name === name);
+    const color = member ? member.color : '#6b7280';
+    const pending = items.filter(t => !t.delegateDone).length;
+
+    const section = document.createElement('div');
+    section.className = 'delegated-person-section';
+    section.innerHTML = `
+      <div class="delegated-person-header">
+        <div class="delegated-person-avatar" style="background:${color}">${initials(name)}</div>
+        <div>
+          <div class="delegated-person-name">${escHtml(name)}</div>
+          <div class="delegated-person-count">${pending} pending · ${items.length - pending} done</div>
+        </div>
+      </div>`;
+
+    items.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'delegated-task-card' + (t.delegateDone ? ' completed' : '');
+      const statusBadge = t.delegateDone
+        ? `<span class="delegated-status-badge status-done">✅ Done ${fmtDate(t.delegateDoneAt)}</span>`
+        : `<span class="delegated-status-badge status-pending">⏳ Pending</span>`;
+      card.innerHTML = `
+        <div class="delegated-task-body">
+          <div class="delegated-task-text">${escHtml(t.text)}</div>
+          <div class="delegated-task-meta">
+            <span class="task-cat cat-${t.cat}">${CAT_LABEL[t.cat] || t.cat}</span>
+            Delegated ${fmtDate(t.delegatedAt)}
+            ${statusBadge}
+          </div>
+        </div>
+        ${!t.delegateDone ? `<button class="delegated-done-btn" onclick="markDelegatedDone('${t.id}')">✓ Done</button>` : ''}
+        <button class="delegated-recall-btn" onclick="recallDelegated('${t.id}')">↩ Recall</button>
+        <button class="delegated-del-btn" onclick="deleteDelegated('${t.id}')" title="Remove">×</button>`;
+      section.appendChild(card);
+    });
+    c.appendChild(section);
+  });
+}
+
+let tasks = {}, inbox = [], reviewLater = [], doneTasks = [], deletedTasks = [], delegatedTasks = [];
 let dragTaskId = null, dragFromQ = null;
+let delegatedFilter = 'all';
 
 const SEED = {
   q1:[
@@ -574,6 +732,7 @@ function showPage(name) {
   if (name === 'donetasks') renderDone();
   if (name === 'deleted') renderDeleted();
   if (name === 'teampage') renderTeamPage();
+  if (name === 'delegated') renderDelegatedPage();
 }
 
 // ── UTILS ──
@@ -809,6 +968,9 @@ function renderQ(q) {
     div.className='task'+(t.done?' done':'')+(isOverdue?' review-due':'');
     div.draggable=true; div.dataset.id=t.id; div.dataset.q=q;
     const assigneeBadge = t.assignee ? `<span class="assignee-badge">👤 ${escHtml(t.assignee)}</span>` : '';
+    const delegateBtn = (q === 'q3' && t.assignee)
+      ? `<button class="delegate-now-btn" onclick="delegateTask('${q}','${t.id}')">Delegate →</button>`
+      : '';
     const assigneeRow = (q === 'q3' || t.assignee) ? `
       <div class="task-assignee-row">
         <span class="task-assignee-label">Assign to:</span>
@@ -816,6 +978,7 @@ function renderQ(q) {
           ${teamOpts(t.assignee||'')}
         </select>
         ${assigneeBadge}
+        ${delegateBtn}
       </div>` : '';
     div.innerHTML=`
       <div class="task-row">
@@ -981,6 +1144,7 @@ function renderDeleted() {
 // ── INIT ──
 loadTeam();
 renderTeamPage();
+loadDelegated();
 loadTasks();
 loadInbox();
 loadRL();
