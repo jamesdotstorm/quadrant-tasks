@@ -141,6 +141,16 @@
     .task-clear-review { background: none; border: none; color: #d1d5db; font-size: .75rem; cursor: pointer; padding: 1px 4px; }
     .task-clear-review:hover { color: #ef4444; }
     .review-badge { font-size: .65rem; font-weight: 700; padding: 1px 6px; border-radius: 20px; background: #fef3c7; color: #d97706; white-space: nowrap; }
+    .scheduled-badge { font-size: .65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #eff6ff; color: #2563eb; white-space: nowrap; }
+    .scheduled-badge.overdue { background: #fef2f2; color: #dc2626; }
+    .task-scheduled-label { font-size: .7rem; color: #9ca3af; white-space: nowrap; }
+    .task-scheduled-input { border: 1px solid #22c55e; border-radius: 6px; padding: 2px 6px; font-size: .7rem; font-family: inherit; outline: none; color: #374151; cursor: pointer; background: #f0fdf4; }
+    .task-scheduled-input:focus { border-color: #16a34a; }
+    .task-clear-scheduled { background: none; border: none; color: #d1d5db; font-size: .75rem; cursor: pointer; padding: 1px 4px; }
+    .task-clear-scheduled:hover { color: #ef4444; }
+    .inbox-scheduled-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .inbox-scheduled-input { border: 1px solid #22c55e; border-radius: 7px; padding: 4px 8px; font-size: .775rem; font-family: inherit; outline: none; color: #374151; background: #f0fdf4; cursor: pointer; }
+    .inbox-scheduled-input:focus { border-color: #16a34a; }
 
     /* quadrant themes */
     .q1 { --accent: #ef4444; --accent-light: #fef2f2; }
@@ -584,6 +594,30 @@ function setInboxAssignee(id, name) {
   if (item) { item.assignee = name || null; saveInbox(); }
 }
 
+// ── SCHEDULED DATE ──
+function setScheduledDate(q, id, date) {
+  const t = tasks[q] && tasks[q].find(t => t.id === id); if (!t) return;
+  t.scheduledDate = date || null;
+  saveTasks(); renderQ(q);
+}
+function setInboxScheduledDate(id, date) {
+  const item = inbox.find(i => i.id === id); if (!item) return;
+  item.scheduledDate = date || null;
+  // Auto-move to q2 (Schedule) if a date is picked
+  if (date) {
+    const cat = document.getElementById('csel-' + id) ? document.getElementById('csel-' + id).value : (item.cat || 'other');
+    moveToQuadrantWithDate(id, 'q2', cat, date);
+  } else {
+    saveInbox();
+  }
+}
+function moveToQuadrantWithDate(id, q, cat, scheduledDate) {
+  const item = inbox.find(i => i.id === id); if (!item) return;
+  inbox = inbox.filter(i => i.id !== id);
+  tasks[q].unshift({ id: uid(), text: item.text, cat: cat || 'other', done: false, scheduledDate: scheduledDate || null });
+  saveInbox(); saveTasks(); renderInbox(); renderQ(q);
+}
+
 // ── DELEGATED TASKS ──
 function loadDelegated() {
   const s = localStorage.getItem('task-delegated-v1');
@@ -855,6 +889,11 @@ function renderInbox() {
           </select>
           ${item.assignee ? `<span class="assignee-badge">👤 ${escHtml(item.assignee)}</span>` : ''}
         </div>
+        <div class="inbox-scheduled-row">
+          <span class="inbox-review-label">📅 Schedule for:</span>
+          <input type="date" class="inbox-scheduled-input" id="schdate-${item.id}" value="${item.scheduledDate||''}" onchange="setInboxScheduledDate('${item.id}',this.value)" title="Pick a date to move to Schedule quadrant" />
+          ${item.scheduledDate ? `<span class="scheduled-badge">📅 ${fmtDate(item.scheduledDate)}</span>` : `<span style="font-size:.7rem;color:#d1d5db;">→ moves to Schedule</span>`}
+        </div>
       </div>`;
     c.appendChild(div);
   });
@@ -1003,6 +1042,11 @@ function renderQ(q) {
         <input type="date" class="task-review-input" value="${t.reviewDate||''}" onchange="setReview('${q}','${t.id}',this.value)" title="Set review date" />
         ${t.reviewDate?`<span class="review-badge">📅 ${fmtDate(t.reviewDate)}</span><button class="task-clear-review" onclick="setReview('${q}','${t.id}',null)">✕</button>`:''}
       </div>
+      ${q === 'q2' ? `<div class="task-meta">
+        <span class="task-scheduled-label">📅 Scheduled for:</span>
+        <input type="date" class="task-scheduled-input" value="${t.scheduledDate||''}" onchange="setScheduledDate('${q}','${t.id}',this.value)" title="Scheduled date" />
+        ${t.scheduledDate ? `<span class="scheduled-badge${t.scheduledDate < today() ? ' overdue' : ''}">📅 ${fmtDate(t.scheduledDate)}</span><button class="task-clear-scheduled" onclick="setScheduledDate('${q}','${t.id}',null)">✕</button>` : ''}
+      </div>` : ''}
       ${assigneeRow}`;
     div.addEventListener('dragstart',e=>{dragTaskId=t.id;dragFromQ=q;setTimeout(()=>div.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
     div.addEventListener('dragend',()=>{div.classList.remove('dragging');dragTaskId=null;dragFromQ=null;});
