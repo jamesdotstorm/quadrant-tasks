@@ -318,9 +318,11 @@
 
 <nav>
   <div class="nav-brand">⚡ Tasks</div>
-  <div style="margin-left:auto;display:flex;gap:6px;padding:0 8px;">
-    <button onclick="exportData()" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Export all data">⬇️ Export</button>
-    <label style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Import data">⬆️ Import<input type="file" accept=".json" onchange="importData(event)" style="display:none"/></label>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 8px;">
+    <span id="sync-status" style="font-size:.72rem;color:#9ca3af;white-space:nowrap;"></span>
+    <button onclick="exportData()" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Export backup">⬇️ Export</button>
+    <label style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Import backup">⬆️ Import<input type="file" accept=".json" onchange="importData(event)" style="display:none"/></label>
+    <button onclick="setupSync()" id="sync-btn" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#6b7280;cursor:pointer;white-space:nowrap;" title="Cloud sync">☁️ Sync</button>
   </div>
   <div class="nav-tab active" onclick="showPage('today')" id="tab-today">🌟 Today</div>
   <div class="nav-tab" onclick="showPage('inbox')" id="tab-inbox">
@@ -571,6 +573,7 @@ function loadTeam() {
 }
 function saveTeam() {
   localStorage.setItem('task-team-v2', JSON.stringify(team));
+  scheduleSyncPush();
 }
 function addTeamMember() {
   const name = document.getElementById('tm-name').value.trim();
@@ -713,6 +716,7 @@ function loadScheduled() {
 function saveScheduled() {
   localStorage.setItem('task-scheduled-v1', JSON.stringify(scheduledTasks));
   updateScheduledBadge();
+  scheduleSyncPush();
 }
 function updateScheduledBadge() {
   const b = document.getElementById('scheduled-page-badge');
@@ -999,6 +1003,7 @@ function loadDelegated() {
 function saveDelegated() {
   localStorage.setItem('task-delegated-v1', JSON.stringify(delegatedTasks));
   updateDelegatedBadge();
+  scheduleSyncPush();
 }
 function updateDelegatedBadge() {
   const b = document.getElementById('delegated-badge');
@@ -1190,7 +1195,7 @@ function loadInbox() {
   }
   saveInbox(); renderInbox();
 }
-function saveInbox() { localStorage.setItem('task-inbox-v1',JSON.stringify(inbox)); updateInboxBadge(); }
+function saveInbox() { localStorage.setItem('task-inbox-v1',JSON.stringify(inbox)); updateInboxBadge(); scheduleSyncPush(); }
 function updateInboxBadge() {
   const b = document.getElementById('inbox-count');
   b.textContent = inbox.length; b.style.display = inbox.length ? 'inline-block' : 'none';
@@ -1284,7 +1289,7 @@ function editInbox(id,el) { const i=inbox.find(i=>i.id===id); if(i){i.text=el.in
 
 // ── REVIEW LATER ──
 function loadRL() { const s=localStorage.getItem('task-rl-v1'); reviewLater=s?JSON.parse(s):[]; updateRLBadge(); }
-function saveRL() { localStorage.setItem('task-rl-v1',JSON.stringify(reviewLater)); updateRLBadge(); }
+function saveRL() { localStorage.setItem('task-rl-v1',JSON.stringify(reviewLater)); updateRLBadge(); scheduleSyncPush(); }
 function updateRLBadge() {
   const b=document.getElementById('rl-count');
   b.textContent=reviewLater.length; b.style.display=reviewLater.length?'inline-block':'none';
@@ -1348,7 +1353,7 @@ function loadTasks() {
   else { tasks=JSON.parse(JSON.stringify(SEED)); }
   saveTasks(); QUADRANTS.forEach(q=>renderQ(q));
 }
-function saveTasks() { localStorage.setItem('quadrant-tasks-v2',JSON.stringify(tasks)); }
+function saveTasks() { localStorage.setItem('quadrant-tasks-v2',JSON.stringify(tasks)); scheduleSyncPush(); }
 function addTask(q) {
   const input=document.getElementById('input-'+q), cat=document.getElementById('cat-'+q).value, text=input.value.trim();
   if(!text) return;
@@ -1519,7 +1524,7 @@ function onDrop(e,toQ){
 
 // ── DONE TASKS ──
 function loadDone() { const s=localStorage.getItem('task-done-v1'); doneTasks=s?JSON.parse(s):[]; updateDoneBadge(); }
-function saveDone() { localStorage.setItem('task-done-v1',JSON.stringify(doneTasks)); updateDoneBadge(); }
+function saveDone() { localStorage.setItem('task-done-v1',JSON.stringify(doneTasks)); updateDoneBadge(); scheduleSyncPush(); }
 function updateDoneBadge() {
   const b=document.getElementById('done-count');
   b.textContent=doneTasks.length; b.style.display=doneTasks.length?'inline-block':'none';
@@ -1563,7 +1568,7 @@ function renderDone() {
 
 // ── DELETED ARCHIVE ──
 function loadDeleted() { const s=localStorage.getItem('task-deleted-v1'); deletedTasks=s?JSON.parse(s):[]; updateDeletedBadge(); }
-function saveDeleted() { localStorage.setItem('task-deleted-v1',JSON.stringify(deletedTasks)); updateDeletedBadge(); }
+function saveDeleted() { localStorage.setItem('task-deleted-v1',JSON.stringify(deletedTasks)); updateDeletedBadge(); scheduleSyncPush(); }
 function updateDeletedBadge() {
   const b=document.getElementById('deleted-count');
   b.textContent=deletedTasks.length; b.style.display=deletedTasks.length?'inline-block':'none';
@@ -1597,6 +1602,109 @@ function renderDeleted() {
       <button class="deleted-perm" onclick="permDeleteFromDeleted('${item.id}')" title="Permanently delete">×</button>`;
     c.appendChild(div);
   });
+}
+
+// ── CLOUD SYNC (GitHub Gist) ──
+const GIST_ID = 'e50c2ef71a8b4e07a14e47714a7ab4c6';
+const GIST_FILE = 'tasks-sync.json';
+let _syncTimer = null;
+let _syncEnabled = false;
+
+function getSyncToken() { return localStorage.getItem('sync-token'); }
+
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = msg; el.style.color = color || '#9ca3af'; }
+}
+
+function setupSync() {
+  const current = getSyncToken();
+  const token = prompt('Enter your GitHub Personal Access Token to enable cloud sync.\n\nYour token is stored only in this browser — never in the code.\n\nCurrent: ' + (current ? '✅ configured' : 'not set'), current || '');
+  if (token === null) return;
+  if (!token.trim()) {
+    localStorage.removeItem('sync-token');
+    setSyncStatus('☁️ Sync off', '#9ca3af');
+    _syncEnabled = false;
+    return;
+  }
+  localStorage.setItem('sync-token', token.trim());
+  _syncEnabled = true;
+  setSyncStatus('☁️ Syncing…', '#6b7280');
+  pullFromGist().then(() => pushToGist());
+}
+
+function getAllData() {
+  return {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    tasks:          localStorage.getItem('quadrant-tasks-v2'),
+    inbox:          localStorage.getItem('task-inbox-v1'),
+    reviewLater:    localStorage.getItem('task-rl-v1'),
+    doneTasks:      localStorage.getItem('task-done-v1'),
+    deletedTasks:   localStorage.getItem('task-deleted-v1'),
+    delegatedTasks: localStorage.getItem('task-delegated-v1'),
+    scheduledTasks: localStorage.getItem('task-scheduled-v1'),
+    team:           localStorage.getItem('task-team-v2'),
+    inboxSeeded:    localStorage.getItem('inbox-seeded-v1'),
+  };
+}
+
+function applyData(data) {
+  if (!data || data.version !== 1) return;
+  if (data.tasks)          localStorage.setItem('quadrant-tasks-v2',   data.tasks);
+  if (data.inbox)          localStorage.setItem('task-inbox-v1',       data.inbox);
+  if (data.reviewLater)    localStorage.setItem('task-rl-v1',          data.reviewLater);
+  if (data.doneTasks)      localStorage.setItem('task-done-v1',        data.doneTasks);
+  if (data.deletedTasks)   localStorage.setItem('task-deleted-v1',     data.deletedTasks);
+  if (data.delegatedTasks) localStorage.setItem('task-delegated-v1',   data.delegatedTasks);
+  if (data.scheduledTasks) localStorage.setItem('task-scheduled-v1',   data.scheduledTasks);
+  if (data.team)           localStorage.setItem('task-team-v2',        data.team);
+  if (data.inboxSeeded)    localStorage.setItem('inbox-seeded-v1',     data.inboxSeeded);
+}
+
+async function pushToGist() {
+  const token = getSyncToken(); if (!token) return;
+  try {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(getAllData()) } } })
+    });
+    if (res.ok) {
+      const t = new Date().toLocaleTimeString('en-ZA', { hour:'2-digit', minute:'2-digit' });
+      setSyncStatus('☁️ Synced ' + t, '#22c55e');
+    } else {
+      setSyncStatus('☁️ Sync failed', '#ef4444');
+    }
+  } catch(e) { setSyncStatus('☁️ Offline', '#f59e0b'); }
+}
+
+async function pullFromGist() {
+  const token = getSyncToken(); if (!token) return;
+  try {
+    setSyncStatus('☁️ Pulling…', '#6b7280');
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: { 'Authorization': 'token ' + token }
+    });
+    if (!res.ok) { setSyncStatus('☁️ Sync failed', '#ef4444'); return; }
+    const gist = await res.json();
+    const content = gist.files?.[GIST_FILE]?.content;
+    if (!content) return;
+    const remote = JSON.parse(content);
+    // Only apply if remote is newer
+    const localSaved  = localStorage.getItem('sync-last-push') || '0';
+    const remoteSaved = remote.savedAt || '0';
+    if (remoteSaved > localSaved) {
+      applyData(remote);
+      localStorage.setItem('sync-last-push', remoteSaved);
+    }
+  } catch(e) { setSyncStatus('☁️ Offline', '#f59e0b'); }
+}
+
+function scheduleSyncPush() {
+  if (!getSyncToken()) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(pushToGist, 2000); // debounce 2s after last change
 }
 
 // ── EXPORT / IMPORT ──
@@ -1645,17 +1753,32 @@ function importData(event) {
 }
 
 // ── INIT ──
-loadTeam();
-renderTeamPage();
-loadDelegated();
-loadScheduled();
-loadTasks();
-renderTodayPage();
-loadInbox();
-loadRL();
-loadDone();
-loadDeleted();
-checkReviewDates(); // auto-return any overdue items to inbox
+async function init() {
+  // Pull from cloud first if sync is configured
+  if (getSyncToken()) {
+    setSyncStatus('☁️ Syncing…', '#6b7280');
+    await pullFromGist();
+  }
+  loadTeam();
+  renderTeamPage();
+  loadDelegated();
+  loadScheduled();
+  loadTasks();
+  loadInbox();
+  loadRL();
+  loadDone();
+  loadDeleted();
+  checkReviewDates();
+  renderTodayPage();
+  if (getSyncToken()) {
+    // Update sync button style
+    const btn = document.getElementById('sync-btn');
+    if (btn) { btn.style.color = '#22c55e'; btn.style.borderColor = '#22c55e'; }
+    setSyncStatus('☁️ Ready', '#22c55e');
+  }
+}
+init();
+// (init handled by async init() above)
 </script>
 </body>
 </html>
