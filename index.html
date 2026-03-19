@@ -1037,11 +1037,6 @@ function renderQ(q) {
           <button class="task-btn delete-btn" onclick="deleteTask('${q}','${t.id}')" title="Delete">×</button>
         </div>
       </div>
-      <div class="task-meta">
-        <span class="task-review-label">Review in:</span>
-        <input type="date" class="task-review-input" value="${t.reviewDate||''}" onchange="setReview('${q}','${t.id}',this.value)" title="Set review date" />
-        ${t.reviewDate?`<span class="review-badge">📅 ${fmtDate(t.reviewDate)}</span><button class="task-clear-review" onclick="setReview('${q}','${t.id}',null)">✕</button>`:''}
-      </div>
       ${q === 'q2' ? `<div class="task-meta">
         <span class="task-scheduled-label">📅 Scheduled for:</span>
         <input type="date" class="task-scheduled-input" value="${t.scheduledDate||''}" onchange="setScheduledDate('${q}','${t.id}',this.value)" title="Scheduled date" />
