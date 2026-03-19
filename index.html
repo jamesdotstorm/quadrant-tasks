@@ -184,6 +184,34 @@
     .team-btn { font-size: .7rem; color: #9ca3af; background: none; border: 1px solid #e5e7eb; cursor: pointer; padding: 2px 8px; border-radius: 5px; transition: color .15s, border-color .15s; margin-left: 6px; }
     .team-btn:hover { color: #f59e0b; border-color: #f59e0b; }
 
+    /* TEAM PAGE */
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .team-card { background: white; border: 1px solid #f3f4f6; border-radius: 16px; padding: 18px 20px; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.05); transition: box-shadow .15s; }
+    .team-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.09); }
+    .team-avatar { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: white; flex-shrink: 0; }
+    .team-card-body { flex: 1; min-width: 0; }
+    .team-card-name { font-size: .95rem; font-weight: 700; color: #111827; }
+    .team-card-role { font-size: .78rem; color: #6b7280; margin-top: 2px; }
+    .team-card-email { font-size: .75rem; color: #9ca3af; margin-top: 3px; word-break: break-all; }
+    .team-card-stats { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .team-stat { font-size: .72rem; background: #f3f4f6; color: #374151; border-radius: 20px; padding: 2px 10px; font-weight: 500; }
+    .team-card-actions { display: flex; gap: 6px; margin-top: 12px; }
+    .team-edit-btn { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 12px; font-size: .75rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; }
+    .team-edit-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+    .team-del-btn { background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 4px 10px; font-size: .75rem; color: #9ca3af; cursor: pointer; transition: border-color .15s, color .15s; }
+    .team-del-btn:hover { border-color: #ef4444; color: #ef4444; }
+    .team-add-card { background: white; border: 2px dashed #e5e7eb; border-radius: 16px; padding: 22px 24px; }
+    .team-add-card h3 { font-size: .95rem; font-weight: 700; color: #374151; margin-bottom: 14px; }
+    .team-form { display: flex; flex-direction: column; gap: 10px; }
+    .team-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .team-form input, .team-form select { flex: 1; min-width: 120px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: .85rem; font-family: inherit; outline: none; transition: border .15s; }
+    .team-form input:focus, .team-form select:focus { border-color: #4f46e5; }
+    .team-form-submit { background: #4f46e5; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: .875rem; font-weight: 600; cursor: pointer; transition: opacity .15s; align-self: flex-start; }
+    .team-form-submit:hover { opacity: .88; }
+    .team-empty { text-align: center; color: #d1d5db; font-size: .875rem; padding: 32px 0; }
+    .team-empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .team-section-title { font-size: .8rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+
     @media (max-width: 700px) {
       .page { padding: 12px; }
       .grid { grid-template-columns: 1fr; min-height: auto; }
@@ -208,6 +236,7 @@
   <div class="nav-tab" onclick="showPage('deleted')" id="tab-deleted">
     🗑 Deleted <span class="nav-badge" id="deleted-count" style="display:none;background:#6b7280">0</span>
   </div>
+  <div class="nav-tab" onclick="showPage('teampage')" id="tab-teampage">👥 Team</div>
 </nav>
 
 <!-- INBOX -->
@@ -318,6 +347,41 @@
   </div>
 </div>
 
+<!-- TEAM PAGE -->
+<div class="page" id="page-teampage">
+  <div class="page-wrap" style="max-width:900px;">
+    <div class="page-header">
+      <h2>👥 Team</h2>
+      <p>Add team members here. They'll appear in the "Assign to" dropdown on tasks.</p>
+    </div>
+    <div class="team-section-title">Members</div>
+    <div class="team-grid" id="team-grid"></div>
+    <div class="team-add-card" id="team-add-card">
+      <h3>➕ Add Team Member</h3>
+      <div class="team-form">
+        <div class="team-form-row">
+          <input type="text" id="tm-name" placeholder="Full name *" />
+          <input type="text" id="tm-role" placeholder="Role (e.g. Developer)" />
+        </div>
+        <div class="team-form-row">
+          <input type="email" id="tm-email" placeholder="Email (optional)" />
+          <select id="tm-color">
+            <option value="#4f46e5">🔵 Indigo</option>
+            <option value="#ef4444">🔴 Red</option>
+            <option value="#22c55e">🟢 Green</option>
+            <option value="#f59e0b">🟡 Amber</option>
+            <option value="#ec4899">🩷 Pink</option>
+            <option value="#06b6d4">🩵 Cyan</option>
+            <option value="#8b5cf6">🟣 Violet</option>
+            <option value="#f97316">🟠 Orange</option>
+          </select>
+        </div>
+        <button class="team-form-submit" onclick="addTeamMember()">Add Member</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- REVIEW LATER -->
 <div class="page" id="page-reviewlater">
   <div class="page-wrap">
@@ -335,25 +399,125 @@ const CAT_LABEL = { work:'Work', personal:'Personal', turnstay:'TurnStay', healt
 const Q_LABEL = { q1:'🔥 Do First', q2:'📅 Schedule', q3:'⚡ Delegate', q4:'🗑 Eliminate' };
 
 // ── TEAM ──
-let team = [];
+let team = []; // array of {id, name, role, email, color}
+const AVATAR_COLORS = ['#4f46e5','#ef4444','#22c55e','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#f97316'];
+
 function loadTeam() {
-  const s = localStorage.getItem('task-team-v1');
-  team = s ? JSON.parse(s) : ['Alon','Tarn'];
+  const s = localStorage.getItem('task-team-v2');
+  if (s) {
+    team = JSON.parse(s);
+  } else {
+    // Migrate from old simple array if it exists
+    const old = localStorage.getItem('task-team-v1');
+    const names = old ? JSON.parse(old) : ['Alon', 'Tarn'];
+    team = names.map((name, i) => ({ id: uid(), name, role: '', email: '', color: AVATAR_COLORS[i % AVATAR_COLORS.length] }));
+  }
   saveTeam();
 }
-function saveTeam() { localStorage.setItem('task-team-v1', JSON.stringify(team)); }
-function editTeam() {
-  const current = team.join(', ');
-  const input = prompt('Edit team members (comma-separated):', current);
-  if (input === null) return;
-  team = input.split(',').map(n => n.trim()).filter(Boolean);
+function saveTeam() {
+  localStorage.setItem('task-team-v2', JSON.stringify(team));
+}
+function addTeamMember() {
+  const name = document.getElementById('tm-name').value.trim();
+  if (!name) { document.getElementById('tm-name').focus(); return; }
+  const role  = document.getElementById('tm-role').value.trim();
+  const email = document.getElementById('tm-email').value.trim();
+  const color = document.getElementById('tm-color').value;
+  team.push({ id: uid(), name, role, email, color });
   saveTeam();
+  document.getElementById('tm-name').value = '';
+  document.getElementById('tm-role').value = '';
+  document.getElementById('tm-email').value = '';
+  renderTeamPage();
   QUADRANTS.forEach(q => renderQ(q));
   renderInbox();
 }
+function deleteTeamMember(id) {
+  const m = team.find(m => m.id === id);
+  if (!confirm(`Remove ${m ? m.name : 'this member'} from the team?`)) return;
+  team = team.filter(m => m.id !== id);
+  saveTeam();
+  renderTeamPage();
+  QUADRANTS.forEach(q => renderQ(q));
+  renderInbox();
+}
+function editTeamMember(id) {
+  const m = team.find(m => m.id === id); if (!m) return;
+  const name  = document.getElementById(`te-name-${id}`).value.trim();
+  const role  = document.getElementById(`te-role-${id}`).value.trim();
+  const email = document.getElementById(`te-email-${id}`).value.trim();
+  const color = document.getElementById(`te-color-${id}`).value;
+  if (!name) return;
+  m.name = name; m.role = role; m.email = email; m.color = color;
+  saveTeam();
+  renderTeamPage();
+  QUADRANTS.forEach(q => renderQ(q));
+  renderInbox();
+}
+function toggleEditCard(id) {
+  const card = document.getElementById('tc-' + id);
+  const editForm = document.getElementById('te-' + id);
+  if (!card || !editForm) return;
+  const editing = editForm.style.display !== 'none';
+  editForm.style.display = editing ? 'none' : 'block';
+  card.querySelector('.team-edit-btn').textContent = editing ? '✏️ Edit' : 'Cancel';
+}
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function delegatedCount(name) {
+  let count = 0;
+  QUADRANTS.forEach(q => { count += (tasks[q]||[]).filter(t => !t.done && t.assignee === name).length; });
+  return count;
+}
+function renderTeamPage() {
+  const grid = document.getElementById('team-grid'); if (!grid) return;
+  if (!team.length) {
+    grid.innerHTML = '<div class="team-empty" style="grid-column:1/-1"><span>👥</span>No team members yet. Add someone below.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  team.forEach(m => {
+    const count = delegatedCount(m.name);
+    const colorOpts = AVATAR_COLORS.map(c =>
+      `<option value="${c}"${c===m.color?' selected':''}>${c}</option>`
+    ).join('');
+    const card = document.createElement('div'); card.className = 'team-card'; card.id = 'tc-' + m.id;
+    card.innerHTML = `
+      <div class="team-avatar" style="background:${m.color}">${initials(m.name)}</div>
+      <div class="team-card-body">
+        <div class="team-card-name">${escHtml(m.name)}</div>
+        ${m.role  ? `<div class="team-card-role">${escHtml(m.role)}</div>` : ''}
+        ${m.email ? `<div class="team-card-email">${escHtml(m.email)}</div>` : ''}
+        <div class="team-card-stats">
+          <span class="team-stat">⚡ ${count} delegated</span>
+        </div>
+        <div class="team-card-actions">
+          <button class="team-edit-btn" onclick="toggleEditCard('${m.id}')">✏️ Edit</button>
+          <button class="team-del-btn" onclick="deleteTeamMember('${m.id}')">Remove</button>
+        </div>
+        <div id="te-${m.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;">
+          <div class="team-form">
+            <div class="team-form-row">
+              <input type="text" id="te-name-${m.id}" value="${escHtml(m.name)}" placeholder="Name *" />
+              <input type="text" id="te-role-${m.id}" value="${escHtml(m.role)}" placeholder="Role" />
+            </div>
+            <div class="team-form-row">
+              <input type="email" id="te-email-${m.id}" value="${escHtml(m.email)}" placeholder="Email" />
+              <select id="te-color-${m.id}">${colorOpts}</select>
+            </div>
+            <button class="team-form-submit" style="font-size:.8rem;padding:7px 14px;" onclick="editTeamMember('${m.id}')">Save</button>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// Old editTeam() no longer needed — kept for 👥 Team button in q3 header
+function editTeam() { showPage('teampage'); }
+
 function teamOpts(selected) {
   const opts = ['<option value="">— Unassigned —</option>'];
-  team.forEach(name => opts.push(`<option value="${escHtml(name)}"${name===selected?' selected':''}>${escHtml(name)}</option>`));
+  team.forEach(m => opts.push(`<option value="${escHtml(m.name)}"${m.name===selected?' selected':''}>${escHtml(m.name)}</option>`));
   return opts.join('');
 }
 function setAssignee(q, id, name) {
@@ -409,6 +573,7 @@ function showPage(name) {
   if (name === 'reviewlater') renderRL();
   if (name === 'donetasks') renderDone();
   if (name === 'deleted') renderDeleted();
+  if (name === 'teampage') renderTeamPage();
 }
 
 // ── UTILS ──
@@ -808,6 +973,7 @@ function renderDeleted() {
 
 // ── INIT ──
 loadTeam();
+renderTeamPage();
 loadTasks();
 loadInbox();
 loadRL();
