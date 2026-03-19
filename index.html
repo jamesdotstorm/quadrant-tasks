@@ -162,15 +162,15 @@
 
     .empty-state { text-align: center; color: #d1d5db; font-size: .8rem; padding: 24px 12px; }
 
-    /* RL POPOVER */
-    .rl-popover { position: absolute; z-index: 200; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.12); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
-    .rl-popover label { font-size: .75rem; color: #6b7280; font-weight: 500; }
-    .rl-popover input[type="date"] { border: 1px solid #e5e7eb; border-radius: 7px; padding: 5px 8px; font-size: .8rem; font-family: inherit; outline: none; width: 100%; }
-    .rl-popover input[type="date"]:focus { border-color: #a78bfa; }
-    .rl-popover-btns { display: flex; gap: 6px; }
-    .rl-popover-park { flex: 1; background: #7c3aed; color: white; border: none; border-radius: 7px; padding: 6px 10px; font-size: .78rem; font-weight: 600; cursor: pointer; }
+    /* RL POPOVER — fixed to viewport so it's never clipped */
+    .rl-popover { position: fixed; z-index: 9999; background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; width: 230px; }
+    .rl-popover label { font-size: .78rem; color: #6b7280; font-weight: 600; line-height: 1.4; }
+    .rl-popover input[type="date"] { border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px; font-size: .82rem; font-family: inherit; outline: none; width: 100%; }
+    .rl-popover input[type="date"]:focus { border-color: #a78bfa; box-shadow: 0 0 0 2px rgba(167,139,250,.15); }
+    .rl-popover-btns { display: flex; gap: 8px; }
+    .rl-popover-park { flex: 1; background: #7c3aed; color: white; border: none; border-radius: 8px; padding: 7px 10px; font-size: .78rem; font-weight: 600; cursor: pointer; transition: opacity .15s; }
     .rl-popover-park:hover { opacity: .88; }
-    .rl-popover-nodate { flex: 1; background: none; border: 1px solid #e5e7eb; border-radius: 7px; padding: 6px 10px; font-size: .78rem; color: #6b7280; cursor: pointer; }
+    .rl-popover-nodate { flex: 1; background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 7px 10px; font-size: .78rem; color: #6b7280; cursor: pointer; transition: border-color .15s, color .15s; white-space: nowrap; }
     .rl-popover-nodate:hover { border-color: #a78bfa; color: #7c3aed; }
     .task-btn-wrap { position: relative; display: inline-flex; }
 
@@ -841,28 +841,35 @@ function renderQ(q) {
   });
 }
 
-// ── RL POPOVER (inline, no native prompt) ──
+// ── RL POPOVER (fixed to viewport — never clipped by overflow) ──
 let _rlPopoverCleanup = null;
 function showRLModal(q, id, btnEl) {
-  // Close any existing popover
   closeRLPopover();
 
   const t = tasks[q] && tasks[q].find(t=>t.id===id); if(!t) return;
 
-  const wrap = btnEl.closest('.task-btn-wrap');
   const pop = document.createElement('div');
   pop.className = 'rl-popover';
   pop.id = 'rl-pop-active';
   pop.innerHTML = `
-    <label>Park "${escHtml(t.text.slice(0,30))}${t.text.length>30?'…':''}" in Review Later</label>
-    <input type="date" id="rl-pop-date" placeholder="Return date (optional)" />
+    <label>🕐 Park "${escHtml(t.text.slice(0,28))}${t.text.length>28?'…':''}"</label>
+    <input type="date" id="rl-pop-date" />
     <div class="rl-popover-btns">
-      <button class="rl-popover-nodate" onclick="confirmRL('${q}','${id}',null)">🕐 No date</button>
+      <button class="rl-popover-nodate" onclick="confirmRL('${q}','${id}',null)">No date</button>
       <button class="rl-popover-park" onclick="confirmRL('${q}','${id}',document.getElementById('rl-pop-date').value||null)">Park →</button>
     </div>`;
-  wrap.appendChild(pop);
+  document.body.appendChild(pop);
 
-  // Close on outside click
+  // Position: below the button, clamped to viewport
+  const rect = btnEl.getBoundingClientRect();
+  const popW = 230, popH = 140;
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+  if (top + popH > window.innerHeight - 8) top = rect.top - popH - 6;
+  pop.style.top  = top  + 'px';
+  pop.style.left = left + 'px';
+
   setTimeout(() => {
     _rlPopoverCleanup = (e) => { if (!pop.contains(e.target) && e.target !== btnEl) closeRLPopover(); };
     document.addEventListener('mousedown', _rlPopoverCleanup);
